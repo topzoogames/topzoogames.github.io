@@ -785,7 +785,7 @@ window.__cheetahShot=()=>new Promise(res=>{const d=document.createElement('div')
 /* Zoo Kart: cartoon kart racing on the Savanna Speedway. 6 karts, 3 laps, drift = mini-turbo, boost pads. */
 function zookart3d(root,opts={}){
   root.innerHTML=`<div class="g3d zk" style="background:#8fd6ff"><style>
-.zk .hud div{background:rgba(70,26,0,.5)}
+.zk .hud div{background:linear-gradient(rgba(16,78,98,.82),rgba(6,36,52,.82));border:1px solid rgba(110,240,255,.65);box-shadow:0 0 14px rgba(60,220,255,.45),inset 0 1px 0 rgba(255,255,255,.35);border-radius:12px;text-shadow:0 1px 2px rgba(0,0,0,.5)}
 .zk-ov{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;gap:10px;padding:clamp(12px,4vh,40px) 16px 18px;text-align:center;color:#fff;overflow-y:auto;overscroll-behavior:contain}
 .zk-ov:before{content:'';position:absolute;inset:0;z-index:-1;background:repeating-conic-gradient(from 0deg at 50% 16%,rgba(255,196,40,.92) 0 9deg,rgba(255,150,30,.92) 9deg 18deg);-webkit-mask-image:linear-gradient(#000 0 34%,rgba(0,0,0,.35) 58%,transparent 80%);mask-image:linear-gradient(#000 0 34%,rgba(0,0,0,.35) 58%,transparent 80%)}
 .zk-ov[hidden]{display:none!important}
@@ -847,10 +847,12 @@ function zookart3d(root,opts={}){
   box.prepend(renderer.domElement);const cv=renderer.domElement;
   const scene=new T.Scene();
   const ctex=(w,h,f)=>{const c=document.createElement('canvas');c.width=w;c.height=h;f(c.getContext('2d'),w,h);const t=new T.CanvasTexture(c);t.anisotropy=renderer.capabilities.getMaxAnisotropy?Math.min(8,renderer.capabilities.getMaxAnisotropy()):1;return t};
-  scene.background=ctex(4,256,(x)=>{const g=x.createLinearGradient(0,0,0,256);g.addColorStop(0,'#3aa8ff');g.addColorStop(.55,'#9fdcff');g.addColorStop(1,'#ffe7b0');x.fillStyle=g;x.fillRect(0,0,4,256)});
-  scene.fog=new T.Fog('#ffe2b8',140,420);
+  scene.background=ctex(4,256,(x)=>{const g=x.createLinearGradient(0,0,0,256);g.addColorStop(0,'#2f9cf5');g.addColorStop(.45,'#8fd2ff');g.addColorStop(.8,'#ffd9c4');g.addColorStop(1,'#ffe8b8');x.fillStyle=g;x.fillRect(0,0,4,256)});
+  scene.fog=new T.Fog('#ffd6c2',120,470);
   const cam=new T.PerspectiveCamera(62,1,.1,900);
-  scene.add(new T.HemisphereLight('#fff6e0','#6a8a2a',.62));
+  {const cT=ctex(256,128,(x)=>{for(let i=0;i<14;i++){const cx=40+Math.random()*176,cy=70+Math.random()*24-(Math.abs(cx-128)<60?14:0),r=18+Math.random()*26;const g=x.createRadialGradient(cx,cy,0,cx,cy,r);g.addColorStop(0,'rgba(255,255,255,.95)');g.addColorStop(.6,'rgba(255,248,240,.75)');g.addColorStop(1,'rgba(255,240,235,0)');x.fillStyle=g;x.beginPath();x.arc(cx,cy,r,0,7);x.fill()}});
+    const NC=mobile?10:18;for(let i=0;i<NC;i++){const sp=new T.Sprite(new T.SpriteMaterial({map:cT,fog:false,transparent:true,depthWrite:false,opacity:.85}));const a=i/NC*6.283+Math.random()*.3,r=360+Math.random()*120;sp.position.set(25+Math.cos(a)*r,70+Math.random()*70,75+Math.sin(a)*r);const sc=110+Math.random()*90;sp.scale.set(sc,sc*.5,1);scene.add(sp)}}
+  scene.add(new T.HemisphereLight('#fff1d6','#7aa23a',.68));
   const sun=new T.DirectionalLight('#fff0d0',.95);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-30,right:30,top:30,bottom:-30,near:1,far:140});scene.add(sun,sun.target);
   const M=(c,r=.85,fs=true)=>new T.MeshStandardMaterial({color:c,roughness:r,flatShading:fs});
   /* ---- track ---- */
@@ -865,12 +867,15 @@ function zookart3d(root,opts={}){
     const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.setIndex(idx);g.computeVertexNormals();
     const m=new T.Mesh(g,mat);m.receiveShadow=true;scene.add(m);return m}
   const rep=t=>{t.wrapS=t.wrapT=T.RepeatWrapping;return t};
-  const roadT=rep(ctex(256,256,(x,w,h)=>{x.fillStyle='#5f5a6c';x.fillRect(0,0,w,h);for(let i=0;i<1400;i++){x.fillStyle=Math.random()<.5?'rgba(255,255,255,.05)':'rgba(0,0,0,.06)';x.fillRect(Math.random()*w,Math.random()*h,2,2)}
-    x.fillStyle='#fff';x.fillRect(6,0,8,h);x.fillRect(w-14,0,8,h);x.fillStyle='rgba(255,255,255,.85)';x.fillRect(w/2-4,0,8,h*.45)}));
+  const roadT=rep(ctex(256,256,(x,w,h)=>{x.fillStyle='#d9a463';x.fillRect(0,0,w,h);for(let i=0;i<60;i++){x.fillStyle=Math.random()<.5?'rgba(255,230,170,.18)':'rgba(150,90,40,.12)';x.beginPath();x.ellipse(Math.random()*w,Math.random()*h,6+Math.random()*20,4+Math.random()*12,Math.random()*3,0,7);x.fill()}
+    for(let i=0;i<1600;i++){x.fillStyle=Math.random()<.5?'rgba(255,240,200,.16)':'rgba(90,50,20,.14)';x.fillRect(Math.random()*w,Math.random()*h,2,2)}
+    for(const cx of[64,92,164,192]){for(let y=0;y<h;y+=2){x.fillStyle='rgba(110,64,30,'+(.10+.08*Math.sin(y*.11+cx))+')';x.fillRect(cx+Math.sin(y*.05+cx)*3,y,9,2)}}
+    for(let i=0;i<40;i++){x.fillStyle=['#b98654','#e9c48a','#a8774a'][i%3];x.beginPath();x.arc(Math.random()*w,Math.random()*h,1+Math.random()*2,0,7);x.fill()}
+    x.fillStyle='rgba(255,250,235,.55)';x.fillRect(4,0,5,h);x.fillRect(w-9,0,5,h)}));
   ribbon(HW,-HW,.02,18,new T.MeshStandardMaterial({map:roadT,roughness:.8}));
   const curbT=rep(ctex(64,128,(x)=>{x.fillStyle='#ff3b3b';x.fillRect(0,0,64,64);x.fillStyle='#fff';x.fillRect(0,64,64,64)}));
   const curbM=new T.MeshStandardMaterial({map:curbT,roughness:.7});ribbon(HW+1.7,HW,.035,3.2,curbM);ribbon(-HW,-HW-1.7,.035,3.2,curbM);
-  const sandM=new T.MeshStandardMaterial({color:'#e8b866',roughness:1});ribbon(HW+6,HW+1.7,.012,10,sandM);ribbon(-HW-1.7,-HW-6,.012,10,sandM);
+  const sandM=new T.MeshStandardMaterial({color:'#e3b672',roughness:1});ribbon(HW+6,HW+1.7,.012,10,sandM);ribbon(-HW-1.7,-HW-6,.012,10,sandM);
   const barT=rep(ctex(128,32,(x)=>{for(let i=0;i<4;i++){x.fillStyle=i%2?'#ffffff':'#ff4a2a';x.fillRect(i*32,0,32,32)}}));
   const barM=new T.MeshStandardMaterial({map:barT,roughness:.6,side:T.DoubleSide});ribbon(HW+8,1,0,4,barM,true);ribbon(-HW-8,1,0,4,barM,true);
   const groundT=rep(ctex(256,256,(x,w,h)=>{x.fillStyle='#86c540';x.fillRect(0,0,w,h);for(let i=0;i<70;i++){x.fillStyle=['#7cbb38','#95cf4c','#a9c95a','#72b335'][i&3];x.beginPath();x.ellipse(Math.random()*w,Math.random()*h,8+Math.random()*26,6+Math.random()*16,Math.random()*3,0,7);x.fill()}}));groundT.repeat.set(40,40);
@@ -901,11 +906,22 @@ function zookart3d(root,opts={}){
   const deco=new T.Group();scene.add(deco);
   function acacia(x,z,s){const g=new T.Group();const tr=new T.Mesh(new T.CylinderGeometry(.25*s,.4*s,5*s,6),trunkM);tr.position.y=2.5*s;tr.rotation.z=(rnd()-.5)*.3;tr.castShadow=true;g.add(tr);
     for(let k=0;k<3;k++){const c=new T.Mesh(new T.IcosahedronGeometry(2.2*s,0),canM[(k+((x|0)&3))&3]);c.scale.set(1.5,.42,1.3);c.position.set((k-1)*1.6*s,5.2*s+k%2*.5*s,(rnd()-.5)*1.2*s);c.castShadow=true;g.add(c)}g.position.set(x,0,z);g.rotation.y=rnd()*6;deco.add(g)}
-  for(let n=0,tries=0;n<110&&tries<2000;tries++){const x=(rnd()-.5)*560+25,z=(rnd()-.5)*520+75;if(nearTrack(x,z,17))continue;n++;const r=rnd();
-    if(r<.5)acacia(x,z,.8+rnd()*.7);else if(r<.7){const m=new T.Mesh(new T.DodecahedronGeometry(1+rnd()*2.2,0),rockM);m.position.set(x,.4,z);m.rotation.set(rnd()*3,rnd()*3,0);m.castShadow=true;deco.add(m)}
+  const roundM=['#ff9a3c','#ff7eb6','#2ec4b6','#ffc23a','#6fd46a','#ff6f61'].map(c=>new T.MeshStandardMaterial({color:c,roughness:.75,flatShading:true}));
+  function roundTree(x,z,s){const g=new T.Group();const tr=new T.Mesh(new T.CylinderGeometry(.22*s,.34*s,3.4*s,6),trunkM);tr.position.y=1.7*s;tr.castShadow=true;g.add(tr);const m=roundM[(rnd()*roundM.length)|0];
+    for(let k=0;k<3;k++){const c=new T.Mesh(new T.IcosahedronGeometry((k?1.3:1.9)*s,1),m);c.position.set(k?(k*2-3)*1.1*s:0,(k?3.6:4.4)*s,k?(rnd()-.5)*s:0);c.castShadow=true;g.add(c)}g.position.set(x,0,z);deco.add(g)}
+  for(let n=0,tries=0;n<150&&tries<2600;tries++){const x=(rnd()-.5)*560+25,z=(rnd()-.5)*520+75;if(nearTrack(x,z,17))continue;n++;const r=rnd();
+    if(r<.3)acacia(x,z,.8+rnd()*.7);else if(r<.58)roundTree(x,z,.8+rnd()*.6);else if(r<.7){const m=new T.Mesh(new T.DodecahedronGeometry(1+rnd()*2.2,0),rockM);m.position.set(x,.4,z);m.rotation.set(rnd()*3,rnd()*3,0);m.castShadow=true;deco.add(m)}
     else if(r<.85){const m=new T.Mesh(new T.ConeGeometry(1.4+rnd(),4+rnd()*4,6),moundM);m.position.set(x,2,z);m.castShadow=true;deco.add(m)}
     else{const m=new T.Mesh(new T.IcosahedronGeometry(1.3+rnd(),0),bushM);m.scale.y=.7;m.position.set(x,.6,z);m.castShadow=true;deco.add(m)}}
-  for(let i=0;i<26;i++){const a=i/26*Math.PI*2,r=330+rnd()*60;const m=new T.Mesh(new T.ConeGeometry(40+rnd()*40,40+rnd()*50,5),M(i%2?'#b48fd0':'#c9a2d9',1));m.position.set(25+Math.cos(a)*r,10,75+Math.sin(a)*r);deco.add(m)}
+  {const mc=['#f0b3c8','#e9a2bf','#f6c6d4','#e397b6'];for(let ring=0;ring<2;ring++){const NM=ring?22:28;for(let i=0;i<NM;i++){const a=(i+ring*.5)/NM*Math.PI*2,r=(ring?420:330)+rnd()*60,hh=(ring?50:26)+rnd()*(ring?50:30);const m=new T.Mesh(new T.ConeGeometry((ring?75:55)+rnd()*40,hh,7+(i&1)),M(mc[(i+ring)&3],1));m.position.set(25+Math.cos(a)*r,hh/2-6,75+Math.sin(a)*r);m.rotation.y=rnd()*3;deco.add(m)}}}
+  /* canyon rock walls on the outside of the back section */
+  {const st=['#d9824a','#c96f3c','#e8a066','#b85f34'];for(let i=330;i<600;i+=9){const p=P[i],n=NR[i];for(const sd of[-1,1]){if((i/9|0)%2&&sd>0)continue;const d=HW+15+rnd()*6,x=p.x+n.x*sd*d,z=p.z+n.z*sd*d;if(nearTrack(x,z,HW+12))continue;
+      let y=0;const lay=3+(rnd()*4|0);for(let k=0;k<lay;k++){const hgt=2.2+rnd()*2.2,w=7-k*.9+rnd()*2;const m=new T.Mesh(new T.CylinderGeometry(w*.8,w,hgt,7),M(st[(k+i)&3],.95));m.position.set(x+(rnd()-.5)*1.5,y+hgt/2,z+(rnd()-.5)*1.5);m.rotation.y=rnd()*3;m.castShadow=k<2;deco.add(m);y+=hgt*.92}}}}
+  /* grass tufts (instanced) */
+  {const tg=new T.ConeGeometry(.22,1,4);tg.translate(0,.5,0);const cnt=mobile?700:2200;const im=new T.InstancedMesh(tg,new T.MeshStandardMaterial({color:'#ffffff',roughness:1,flatShading:true}),cnt*3);const o=new T.Object3D(),col=new T.Color();let n=0;
+    const gc=['#5ea835','#79c243','#4c9a2e','#94cf50','#a8c84e'];for(let t=0;t<cnt*4&&n<cnt*3-3;t++){const i=(rnd()*N)|0,p=P[i],nr=NR[i],sd=rnd()<.5?-1:1,d=HW+6.5+rnd()*rnd()*60,x=p.x+nr.x*sd*d+(rnd()-.5)*4,z=p.z+nr.z*sd*d+(rnd()-.5)*4;if(nearTrack(x,z,HW+6))continue;
+      const c=gc[(rnd()*5)|0];for(let b=0;b<3;b++){o.position.set(x+(rnd()-.5)*.7,0,z+(rnd()-.5)*.7);o.rotation.set((rnd()-.5)*.5,rnd()*3,(rnd()-.5)*.5);const sc=.28+rnd()*.38;o.scale.set(sc*1.3,sc*(.7+rnd()*.6),sc*1.3);o.updateMatrix();im.setMatrixAt(n,o.matrix);im.setColorAt(n,col.set(c));n++}}
+    im.count=n;im.instanceMatrix.needsUpdate=true;if(im.instanceColor)im.instanceColor.needsUpdate=true;scene.add(im)}
   /* crowd flags along the main straight */
   for(let i=20;i<180;i+=16){for(const sd of[-1,1]){const p=P[i],n=NR[i];const pole=new T.Mesh(new T.CylinderGeometry(.08,.08,4,5),M('#eee'));pole.position.set(p.x+n.x*sd*(HW+9.5),2,p.z+n.z*sd*(HW+9.5));deco.add(pole);
       const fl=new T.Mesh(new T.PlaneGeometry(1.6,1),new T.MeshStandardMaterial({color:['#ff4a2a','#ffd23f','#2fbf3a','#3aa8ff'][(i/16+sd+2)&3],side:T.DoubleSide}));fl.position.set(.8,1.5,0);pole.add(fl)}}
@@ -915,6 +931,10 @@ function zookart3d(root,opts={}){
   const dotT=ctex(32,32,(x)=>{const g=x.createRadialGradient(16,16,0,16,16,16);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,32,32)});
   const pts=new T.Points(pG,new T.PointsMaterial({size:.55,map:dotT,vertexColors:true,transparent:true,depthWrite:false}));pts.frustumCulled=false;scene.add(pts);
   const tc=new T.Color();
+  const MAXD=mobile?160:320,dPos=new Float32Array(MAXD*3).fill(-999),dV=new Float32Array(MAXD*3),dL=new Float32Array(MAXD);let dN=0;const dG=new T.BufferGeometry();dG.setAttribute('position',new T.BufferAttribute(dPos,3));
+  const dust=new T.Points(dG,new T.PointsMaterial({size:2.8,map:dotT,color:'#efcb92',transparent:true,opacity:.55,depthWrite:false}));dust.frustumCulled=false;scene.add(dust);
+  function emitD(x,y,z,vx,vy,vz,life){const i=dN++%MAXD;dPos[i*3]=x;dPos[i*3+1]=y;dPos[i*3+2]=z;dV[i*3]=vx;dV[i*3+1]=vy;dV[i*3+2]=vz;dL[i]=life}
+  function stepD(dt){for(let i=0;i<MAXD;i++){if(dL[i]<=0)continue;dL[i]-=dt;if(dL[i]<=0){dPos[i*3+1]=-999;continue}dPos[i*3]+=dV[i*3]*dt;dPos[i*3+1]+=dV[i*3+1]*dt;dPos[i*3+2]+=dV[i*3+2]*dt;dV[i*3]*=.96;dV[i*3+2]*=.96}dG.attributes.position.needsUpdate=true}
   function emit(x,y,z,vx,vy,vz,col,life){const i=pN++%MAXP;pPos[i*3]=x;pPos[i*3+1]=y;pPos[i*3+2]=z;pV[i*3]=vx;pV[i*3+1]=vy;pV[i*3+2]=vz;tc.set(col);pCol[i*3]=tc.r;pCol[i*3+1]=tc.g;pCol[i*3+2]=tc.b;pL[i]=life}
   function stepP(dt){for(let i=0;i<MAXP;i++){if(pL[i]<=0)continue;pL[i]-=dt;if(pL[i]<=0){pPos[i*3+1]=-999;continue}pV[i*3+1]-=5*dt;pPos[i*3]+=pV[i*3]*dt;pPos[i*3+1]=Math.max(.05,pPos[i*3+1]+pV[i*3+1]*dt);pPos[i*3+2]+=pV[i*3+2]*dt}
     pG.attributes.position.needsUpdate=true;pG.attributes.color.needsUpdate=true}
@@ -1015,6 +1035,7 @@ function zookart3d(root,opts={}){
     k.x+=Math.sin(k.h)*k.v*dt;k.z+=Math.cos(k.h)*k.v*dt;
     if(k.drift){const sl=k.dd*k.v*.02*dt;k.x+=Math.cos(k.h)*sl;k.z-=Math.sin(k.h)*sl} /* slide outwards a little */
     if(k.boost>0){k.boost-=dt;if(Math.random()<.8)emit(k.x-Math.sin(k.h)*1.5,.5,k.z-Math.cos(k.h)*1.5,(Math.random()-.5)*2,1,(Math.random()-.5)*2,Math.random()<.5?'#ffcf3a':'#ff6a1a',.3)}
+    if(k.v>12&&!k.air&&Math.random()<(k.drift?.7:.28)){const fx=Math.sin(k.h),fz=Math.cos(k.h);emitD(k.x-fx*1.4+(Math.random()-.5)*1.2,.4,k.z-fz*1.4+(Math.random()-.5)*1.2,-fx*2+(Math.random()-.5)*2,.8+Math.random(),-fz*2+(Math.random()-.5)*2,.7+Math.random()*.5)}
     if(offroad&&k.v>8&&Math.random()<.5)emit(k.x-Math.sin(k.h)*1.2,.3,k.z-Math.cos(k.h)*1.2,(Math.random()-.5)*2,1.5,(Math.random()-.5)*2,'#e8c27a',.6);
     /* track index, laps, walls, pads */
     const pi=k.i;k.i=nearest(k);
@@ -1072,7 +1093,7 @@ function zookart3d(root,opts={}){
     mx.strokeStyle='rgba(60,20,0,.6)';mx.lineWidth=9;mx.stroke();mx.strokeStyle='#fff';mx.lineWidth=4;mx.stroke();
     for(const k of [...karts].reverse()){const [a,b]=mp(k.x,k.z);mx.beginPath();mx.arc(a,128-b,k===P1?5:3.6,0,7);mx.fillStyle=k===P1?'#ff3b3b':(k.d.tint||'#fff');mx.fill();mx.lineWidth=1.5;mx.strokeStyle='#4a2500';mx.stroke()}}
   /* ---- main step ---- */
-  function step(dt){if(!s)return;stepP(dt);padT.offset.y-=dt*1.6;
+  function step(dt){if(!s)return;stepP(dt);stepD(dt);padT.offset.y-=dt*1.6;
     if(s.mode==='menu'||s.mode==='over'){s.t+=dt;return}
     if(s.mode==='pause')return;
     if(s.mode==='count'){s.cd-=dt;const n=Math.ceil(s.cd-.6);if(n<s.last&&n>=1){s.last=n;big(String(n),600);SFX.beep()}if(s.cd<=.6&&s.last>0){s.last=0;big('GO!',700);SFX.go();engine(true)}
