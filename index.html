@@ -696,7 +696,7 @@ window.__cheetahShot=()=>new Promise(res=>{const d=document.createElement('div')
 function zooblocks3d(root,opts={}){
   root.innerHTML=`<div class="g3d"><div class="hud"><div><b id="zs">0</b><small>score</small></div><div><b id="zb">0</b><small>best</small></div><div><b id="zc">x1</b><small>combo</small></div><div class="hbtns"><button class="mute" id="zmu" type="button"></button><button class="mute" id="zq" type="button"></button></div></div>
     <div class="pop" id="zp"></div>
-    <div class="ov show3d" id="zov"><h2 id="zoh">Zoo Blocks 3D</h2><div class="ldbar" id="zlbw"><i id="zlb"></i></div><p id="zop">Loading the zoo…</p><button class="btn" id="zog" type="button" hidden>Play</button><div style="display:flex;flex-wrap:wrap;justify-content:center;max-width:360px"><button class="btn" id="zod" type="button" hidden style="display:inline-block;margin:6px 3px 0;padding:9px 14px;font-size:14px;background:#4cc3ff">Daily puzzle</button><button class="btn" id="zbg" type="button" hidden style="display:inline-block;margin:6px 3px 0;padding:9px 14px;font-size:14px;background:#ff7eb6">Big blocks (hard)</button><button class="btn" id="zwk" type="button" hidden style="display:inline-block;margin:6px 3px 0;padding:9px 14px;font-size:14px;background:#7bd389">Weekly puzzle</button></div><small id="zob"></small></div></div>`;
+    <div class="ov show3d" id="zov" style="overflow-y:auto"><h2 id="zoh">Zoo Blocks 3D</h2><div class="ldbar" id="zlbw"><i id="zlb"></i></div><p id="zop">Loading the zoo…</p><button class="btn" id="zog" type="button" hidden>Play</button><div style="display:flex;flex-wrap:wrap;justify-content:center;max-width:360px"><button class="btn" id="zod" type="button" hidden style="display:inline-block;margin:6px 3px 0;padding:9px 14px;font-size:14px;background:#4cc3ff">Daily puzzle</button><button class="btn" id="zbg" type="button" hidden style="display:inline-block;margin:6px 3px 0;padding:9px 14px;font-size:14px;background:#ff7eb6">Big blocks (hard)</button><button class="btn" id="zwk" type="button" hidden style="display:inline-block;margin:6px 3px 0;padding:9px 14px;font-size:14px;background:#7bd389">Weekly puzzle</button></div><button class="btn" id="zsh" type="button" hidden style="margin-top:8px;padding:8px 14px;font-size:13px;background:#ffffff;color:#2b1a00">Share score</button><small id="zob"></small></div></div>`;
   const box=root.querySelector('.g3d'),$=id=>root.querySelector('#'+id);
   let alive=true,raf=0;const cleanups=[];
   const lb=v=>{const b=$('zlb');if(b)b.style.width=v+'%';if(v>=100)setTimeout(()=>{const w=$('zlbw');w&&w.classList.add('done')},400)};
@@ -812,8 +812,8 @@ function zooblocks3d(root,opts={}){
   function over(){if(mode!=='play')return;mode='over';const nb=score>best;if(nb){best=score;save(bkey(),best)}
     let dl='';if(weekly){const k='zoo-blocks-weekly',d=load(k,{});const prev=d.wk===wkKey?d.best:0;if(score>prev)save(k,{wk:wkKey,best:score});dl=`<br>Weekly puzzle ${wkKey}: <b>${Math.max(prev,score)}</b>${score>prev&&prev?' (new weekly best)':''}`}if(daily){const k='zoo-blocks-daily',d=load(k,{});const prev=d.day===today?d.best:0;if(score>prev)save(k,{day:today,best:score});dl=`<br>Daily puzzle ${today}: <b>${Math.max(prev,score)}</b>${score>prev&&prev?' (new daily best)':''}`}
     const coins=Math.floor(score/50);if(coins>0)save('cheetah-coins',load('cheetah-coins',0)+coins);
-    $('zoh').textContent=(nb?'New best!':'No more room!')+(big?' (Big blocks)':weekly?' (Weekly)':'');$('zop').innerHTML=`Score <b>${score}</b> · Best <b>${best}</b>${coins?` · +${coins} coins`:''}<br>${dl}<br><small>Coins are shared with the TopZoo racing games.</small>`;$('zod').hidden=false;$('zbg').hidden=false;$('zwk').hidden=false;
-    $('zog').textContent='Play again';$('zog').hidden=false;$('zov').hidden=false;blip(400,120,.5,'sine',.08)}
+    $('zoh').textContent=(nb?'New best!':'No more room!')+(big?' (Big blocks)':weekly?' (Weekly)':'');$('zop').innerHTML=`Score <b>${score}</b> · Best <b>${best}</b>${coins?` · +${coins} coins`:''}${dl}<br><small>Coins also work in the racing games.</small>`;$('zod').hidden=false;$('zbg').hidden=false;$('zwk').hidden=false;
+    $('zsh').hidden=false;$('zsh').textContent='Share score';lastShare={score,mode:weekly?' weekly puzzle '+wkKey:daily?' daily puzzle '+today:big?' (big blocks)':''};$('zog').textContent='Play again';$('zog').hidden=false;$('zov').hidden=false;blip(400,120,.5,'sine',.08)}
   let daily=false,weekly=false;const today=new Date().toISOString().slice(0,10);
   const bkey=()=>big?'zoo-blocks-best-big':weekly?'zoo-blocks-best-week':'zoo-blocks-best';
   /* weekly puzzle: same pre-filled crate + same pieces for everyone this ISO week */
@@ -822,7 +822,7 @@ function zooblocks3d(root,opts={}){
     if(grid[r][c]||grid[r].filter(v=>v).length>=5||grid.filter(row=>row[c]).length>=5)continue;
     for(const C of [c,N-1-c]){const b=block(ai);b.position.set(C-3.5,.33,r-3.5);scene.add(b);grid[r][C]=ai+1;meshGrid[r][C]=b}put+=2}}
   const seeded=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
-  function begin(d){daily=d===true;big=d==='big';weekly=d==='week';best=load(bkey(),0);$('zbg').hidden=true;$('zwk').hidden=true;rng=daily?seeded(Number(today.replace(/-/g,''))):weekly?seeded(Number(wkKey.replace(/\D/g,''))*7+13):Math.random;reset();if(weekly)prefill();mode='play';$('zod').hidden=true;$('zov').hidden=true;if(ac&&ac.state==='suspended')ac.resume()}
+  function begin(d){daily=d===true;big=d==='big';weekly=d==='week';best=load(bkey(),0);$('zbg').hidden=true;$('zwk').hidden=true;$('zsh').hidden=true;rng=daily?seeded(Number(today.replace(/-/g,''))):weekly?seeded(Number(wkKey.replace(/\D/g,''))*7+13):Math.random;reset();if(weekly)prefill();mode='play';$('zod').hidden=true;$('zov').hidden=true;if(ac&&ac.state==='suspended')ac.resume()}
   /* input: drag a tray piece onto the board */
   const ray=new T.Raycaster(),plane=new T.Plane(new T.Vector3(0,1,0),-.33),hit=new T.Vector3(),ndc=new T.Vector2();
   const ghostM=[new T.MeshBasicMaterial({color:'#4cff7a',transparent:true,opacity:.45}),new T.MeshBasicMaterial({color:'#ff4c4c',transparent:true,opacity:.35})],ghost=[];
@@ -840,6 +840,9 @@ function zooblocks3d(root,opts={}){
     if(!(rc&&place(p,rc[0],rc[1]))){p.g.position.set(TRAYX[p.slot],.1,TRAYZ);p.g.scale.setScalar(TS);if(rc)blip(200,140,.15,'sine',.05)}};
   cv.addEventListener('pointerdown',down);cv.addEventListener('pointermove',move);cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
   $('zog').onclick=()=>begin(false);$('zod').onclick=()=>begin(true);$('zbg').onclick=()=>begin('big');$('zwk').onclick=()=>begin('week');
+  /* share: phone share sheet if there is one, else copy the text */
+  let lastShare=null;$('zsh').onclick=async()=>{if(!lastShare)return;const url='https://topzoogames.github.io/#g-zoo-blocks-3d',text=`I scored ${lastShare.score} in Zoo Blocks 3D${lastShare.mode}. Can you beat it?`;
+    try{if(navigator.share){await navigator.share({title:'Zoo Blocks 3D',text,url});return}await navigator.clipboard.writeText(text+' '+url);$('zsh').textContent='Copied!'}catch(e){if(e&&e.name!=='AbortError')$('zsh').textContent='Could not share'}};
   /* resize: keep the board + tray in view on phones (portrait) */
   let LZ=1.4;const fit=()=>{const w=box.clientWidth||800,h=box.clientHeight||500;renderer.setSize(w,h,false);cv.style.width='100%';cv.style.height='100%';cam.aspect=w/h;
     const k=Math.max(1,.8/cam.aspect);cam.position.set(0,15.5*k,(cam.aspect<1?8.5:10.5)*k);LZ=cam.aspect<1?2:1.4;cam.lookAt(0,0,LZ);cam.updateProjectionMatrix()};
