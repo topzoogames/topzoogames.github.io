@@ -689,24 +689,26 @@ window.__cheetahShot=()=>new Promise(res=>{const d=document.createElement('div')
 function drift3d(root,opts={}){
   root.innerHTML=`<div class="g3d night"><div class="hud"><div><b id="dt">90</b><small>seconds</small></div><div><b id="dk">0</b><small>km/h</small></div><div><b id="ds">0</b><small>drift pts</small></div><div><b id="dc">x1</b><small>combo</small></div></div>
     <div class="pop" id="pp"></div>
-    <div class="ov show3d" id="ov"><h2 id="oh">Cheetah Drift Arena</h2><div class="ldbar" id="lbw"><i id="lb"></i></div><p id="op">Loading the arena…</p><button class="btn" id="og" type="button" hidden>Start session</button><small id="ob"></small></div>
+    <div class="ov show3d" id="ov"><h2 id="oh">Cheetah Drift Arena</h2><div class="ldbar" id="lbw"><i id="lb"></i></div><p id="op">Loading the arena…</p><div class="gar" id="trk"></div><button class="btn" id="og" type="button" hidden>Start session</button><small id="ob"></small></div>
     <div id="tc" hidden style="position:absolute;inset:auto 0 12px 0;display:flex;justify-content:space-between;padding:0 12px;z-index:3;pointer-events:none">
       <div style="display:flex;gap:10px"><button class="nitro" id="tl" type="button" style="position:static;pointer-events:auto">◀</button><button class="nitro" id="tr" type="button" style="position:static;pointer-events:auto">▶</button></div>
       <button class="nitro" id="th" type="button" style="position:static;pointer-events:auto">DRIFT</button></div></div>`;
   const box=root.querySelector('.g3d'),$=id=>root.querySelector('#'+id);
-  let alive=true,raf=0,ldP=0;const cleanups=[];
+  let alive=true,raf=0,ldP=0,fwd=null;const cleanups=[];
   const prog=v=>{ldP=Math.max(ldP,v);const b=$('lb');if(b)b.style.width=ldP+'%';if(ldP>=100)setTimeout(()=>{const w=$('lbw');w&&w.classList.add('done')},500)};
   setTimeout(()=>prog(22),30);setTimeout(()=>{if(ldP<100)prog(100)},12000);
-  const stop=()=>{alive=false;cancelAnimationFrame(raf);cleanups.forEach(f=>{try{f()}catch(e){}})};
+  const stop=()=>{alive=false;cancelAnimationFrame(raf);cleanups.forEach(f=>{try{f()}catch(e){}});cleanups.length=0;if(fwd){const f=fwd;fwd=null;f()}};
   loadThree().then(()=>{prog(55);if(alive)build()}).catch(e=>{console.warn('drift3d',e);$('op').textContent='The 3D engine could not load. Check your internet connection, then reload the page.'});
   return stop;
 
   function build(){
+  /* arenas: 'night' = Neon Lot, 'dusk' = Sunset Docks (unlocks at best 1000) */
+  const AN=opts.arena||(load('drift-arena','night')==='dusk'&&load('best-drift-arena',0)>=1000?'dusk':'night'),DK=AN==='dusk';
   const T=THREE,mobile=matchMedia('(pointer:coarse)').matches||box.clientWidth<700,AR=58;
   const renderer=new T.WebGLRenderer({antialias:!mobile,preserveDrawingBuffer:!!opts.test});
   renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.5:2));renderer.shadowMap.enabled=!mobile;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;renderer.outputEncoding=T.sRGBEncoding;
   const cv=renderer.domElement;box.prepend(cv);
-  const scene=new T.Scene();scene.background=new T.Color(0x150f33);scene.fog=new T.Fog(0x150f33,70,190);
+  const scene=new T.Scene();scene.background=new T.Color(DK?0xf08a5d:0x150f33);scene.fog=new T.Fog(DK?0xf2a07a:0x150f33,DK?60:70,DK?170:190);
   const cam=new T.PerspectiveCamera(62,1,.1,400);
   const size=()=>{const w=box.clientWidth||800,h=box.clientHeight||500;renderer.setSize(w,h,false);cv.style.width='100%';cv.style.height='100%';cam.aspect=w/h;cam.updateProjectionMatrix()};size();
   const ro=new ResizeObserver(size);ro.observe(box);cleanups.push(()=>ro.disconnect(),()=>renderer.dispose());
@@ -723,8 +725,8 @@ function drift3d(root,opts={}){
   const ppSize=()=>{if(!composer)return;const w=box.clientWidth||800,h=box.clientHeight||500,pr=renderer.getPixelRatio();composer.setSize(w,h);if(fxaa)fxaa.uniforms.resolution.value.set(1/(w*pr),1/(h*pr))};
   const ro2=new ResizeObserver(ppSize);ro2.observe(box);cleanups.push(()=>ro2.disconnect());
   if(!mobile)loadPP().then(()=>{if(alive)setupPP()}).catch(()=>{});
-  scene.add(new T.HemisphereLight(0x8e7cff,0x1a1028,.75));
-  const sun=new T.DirectionalLight(0xffd2a8,.9);sun.position.set(30,50,20);sun.castShadow=!mobile;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40});scene.add(sun,sun.target);
+  scene.add(new T.HemisphereLight(DK?0xffc9a0:0x8e7cff,DK?0x3a2030:0x1a1028,DK?.9:.75));
+  const sun=new T.DirectionalLight(DK?0xffb070:0xffd2a8,DK?1.5:.9);sun.position.set(30,50,20);sun.castShadow=!mobile;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40});scene.add(sun,sun.target);
   /* asphalt lot: code-drawn texture with paint lines + oil stains */
   const tc=document.createElement('canvas');tc.width=tc.height=1024;const g=tc.getContext('2d');g.fillStyle='#2a2b33';g.fillRect(0,0,1024,1024);
   for(let i=0;i<9000;i++){const v=30+Math.random()*30|0;g.fillStyle=`rgb(${v},${v},${v+6})`;g.fillRect(Math.random()*1024,Math.random()*1024,2,2)}
@@ -750,7 +752,7 @@ function drift3d(root,opts={}){
   for(let y=4;y<124;y+=8)for(let x=4;x<60;x+=8)if(Math.random()<.45){wg.fillStyle=['#ffd27a','#9fe8ff','#ff9fd0','#fff3c4'][Math.random()*4|0];wg.fillRect(x,y,4,5)}
   const wt=new T.CanvasTexture(wc);wt.encoding=T.sRGBEncoding;wt.wrapS=wt.wrapT=T.RepeatWrapping;
   for(let i=0;i<(mobile?26:44);i++){const a=i/(mobile?26:44)*Math.PI*2+Math.random()*.05,rr=AR+28+Math.random()*30,h=14+Math.random()*38,w=8+Math.random()*10,t=wt.clone();t.needsUpdate=true;t.repeat.set(w/8,h/16);
-    const m=new T.Mesh(new T.BoxGeometry(w,h,w),new T.MeshStandardMaterial({color:0x1a1630,emissive:0xffffff,emissiveMap:t,emissiveIntensity:.9,roughness:.9}));m.position.set(Math.cos(a)*rr,h/2,Math.sin(a)*rr);m.rotation.y=-a;scene.add(m)}
+    const m=new T.Mesh(new T.BoxGeometry(w,h,w),new T.MeshStandardMaterial({color:DK?0x5a3a4a:0x1a1630,emissive:0xffffff,emissiveMap:t,emissiveIntensity:DK?.35:.9,roughness:.9}));m.position.set(Math.cos(a)*rr,h/2,Math.sin(a)*rr);m.rotation.y=-a;scene.add(m)}
   /* bonus zone: a glowing ring that moves every 15 s; drifting inside it doubles the combo gain */
   const zoneM=new T.MeshBasicMaterial({color:0x39ff88,transparent:true,opacity:.35,depthWrite:false}),zone=new T.Mesh(new T.RingGeometry(6.2,7,48),zoneM);zone.rotation.x=-Math.PI/2;zone.position.y=.03;scene.add(zone);
   const zoneFill=new T.Mesh(new T.CircleGeometry(6.2,48),new T.MeshBasicMaterial({color:0x39ff88,transparent:true,opacity:.07,depthWrite:false}));zoneFill.rotation.x=-Math.PI/2;zoneFill.position.y=.025;scene.add(zoneFill);
@@ -810,7 +812,7 @@ function drift3d(root,opts={}){
       /* donut: keep sliding round a cone (within 9 m) for a full turn */
       const nc=cones.reduce((m,c)=>{const d=Math.hypot(c.position.x-s.x,c.position.z-s.z);return d<9&&(!m||d<m.d)?{c,d}:m},null);
       if(nc){if(s.spinC!==nc.c){s.spinC=nc.c;s.spin=0;s.lastA=Math.atan2(s.x-nc.c.position.x,s.z-nc.c.position.z)}const an=Math.atan2(s.x-nc.c.position.x,s.z-nc.c.position.z);let da=an-s.lastA;if(da>Math.PI)da-=Math.PI*2;if(da<-Math.PI)da+=Math.PI*2;s.spin+=da;s.lastA=an;
-        if(Math.abs(s.spin)>Math.PI*2){s.spin=0;s.pts+=150;pop('Donut! +150');blip(600,1500,.25,'triangle',.09)}}else s.spinC=null;
+        if(Math.abs(s.spin)>Math.PI*2){s.spin=0;s.pts+=150;s.donuts=(s.donuts||0)+1;pop('Donut! +150');blip(600,1500,.25,'triangle',.09)}}else s.spinC=null;
       s.combo+=s.ang*sp*dt*.06*(inZ?2:1);s.mult=Math.min(5,s.mult+dt*.35);s.calm=0;
       const bx=Math.sin(s.h),bz=Math.cos(s.h);for(const sx of[-1,1]){const wx=s.x-bx*1.5+rx*sx*.85,wz=s.z-bz*1.5+rz*sx*.85;skid(wx,wz,s.h);if(Math.random()<.5)puff(wx,wz)}}
     else if(play){s.calm+=dt;if(s.calm>.9)bank()}
@@ -827,9 +829,13 @@ function drift3d(root,opts={}){
   const render=()=>composer?composer.render():renderer.render(scene,cam);
   const best=()=>load('best-drift-arena',0);
   function end(){s.mode='over';$('tc').hidden=true;const sc=s.pts,nb=sc>best();if(nb)save('best-drift-arena',sc);const coins=Math.floor(sc/40);if(coins>0)save('cheetah-coins',load('cheetah-coins',0)+coins);
-    $('oh').textContent=nb?'New best!':'Time!';$('op').innerHTML=`Drift points: <b>${sc}</b> · best single drift: <b>${s.best}</b> · +${coins} coins (shared with Cheetah Chase)`;
-    $('og').textContent='Drift again';$('ob').textContent='Best: '+Math.max(sc,best());$('ov').hidden=false;blip(520,1040,.25,'triangle',.08)}
+    $('oh').textContent='Time!';$('op').innerHTML=`${nb?'<span class="nbest">NEW BEST!</span>':''}<span class="res"><span><b>${sc}</b>drift pts</span><span><b>${s.best}</b>best drift</span><span><b>${s.donuts||0}</b>donuts</span><span class="rc"><b>+${coins}</b>coins</span></span><small style="display:block;opacity:.75;margin-top:4px">Coins are shared with Cheetah Chase and Rhino Rally. Wallet: ${load('cheetah-coins',0)}</small>`;
+    $('og').textContent='Drift again';drawTrk();$('ob').textContent='Best: '+Math.max(sc,best());$('ov').hidden=false;blip(520,1040,.25,'triangle',.08)}
   const begin=()=>{reset();s.mode='play';$('ov').hidden=true;$('tc').hidden=!mobile;audio();if(ac&&ac.state==='suspended')ac.resume()};
+  const drawTrk=()=>{const el=$('trk');if(!el||opts.test)return;el.innerHTML='';const bst=load('best-drift-arena',0);
+    [['night','Neon Lot',0],['dusk','Sunset Docks',1000]].forEach(([id,n,need])=>{const ok=bst>=need,b=document.createElement('button');b.type='button';b.className='gb'+(id===AN?' on':'');
+      b.innerHTML=`<b>${n}</b><small>${id===AN?'Arena selected':ok?'Tap to drive':'\u{1F512} Best '+need+' to unlock'}</small>`;b.onclick=()=>{if(!ok||id===AN)return;save('drift-arena',id);stop();fwd=drift3d(root,opts)};el.appendChild(b)})};
+  drawTrk();
   $('og').onclick=begin;
   $('op').textContent=mobile?'Hold ◀ ▶ to steer (the car accelerates by itself). Hold DRIFT to slide the back out. Long, wide slides score big; walls and cones lose your combo.':'Arrow keys or WASD to drive. Hold Space for the handbrake to slide. Long, wide slides score big; walls and cones lose your combo. 90 seconds.';
   $('og').hidden=false;$('ob').textContent=best()?'Best: '+best():'';
