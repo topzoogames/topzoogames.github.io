@@ -681,7 +681,7 @@ window.__cheetahShot=()=>new Promise(res=>{const d=document.createElement('div')
 function cheetah3d(root,opts={}){
   root.innerHTML=`<div class="g3d night"><div class="hud"><div><b id="hd">0</b><small>metres</small></div><div><b id="hk">0</b><small>km/h</small></div><div><b id="hs">0</b><small>score</small></div><div><b id="hn">100</b><small>nitro</small></div><div class="hbtns"><button class="mute" id="hm" type="button"></button><button class="mute" id="hmu" type="button"></button><button class="mute" id="hq" type="button"></button></div></div>
     <div class="pop" id="pp"></div>
-    <div class="ov show3d" id="ov"><h2 id="oh">Cheetah Chase</h2><div class="ldbar" id="lbw"><i id="lb"></i></div><p id="op">Loading the city…</p><div class="gar" id="trk"></div><div id="crr" class="mis crr" hidden></div><div class="gar" id="gar"></div><div class="gar" id="upg"></div><div class="gar cust" id="cust"></div><small id="oxp" style="display:block;margin:2px 0 4px;font-weight:800;letter-spacing:.3px"></small><small id="oc"></small><button class="btn" id="og" type="button" hidden>Start race</button><button class="btn" id="odc" type="button" hidden style="margin-top:6px;background:linear-gradient(135deg,#7b5cff,#3d7bff)">Daily challenge</button><small id="ob"></small></div>
+    <div class="ov show3d" id="ov"><h2 id="oh">Cheetah Chase</h2><div class="ldbar" id="lbw"><i id="lb"></i></div><p id="op">Loading the city…</p><div class="gar" id="trk"></div><div id="crr" class="mis crr" hidden></div><div class="gar" id="gar"></div><div class="gar" id="upg"></div><div class="gar cust" id="cust"></div><div class="gar" id="shop"></div><small id="oxp" style="display:block;margin:2px 0 4px;font-weight:800;letter-spacing:.3px"></small><small id="oc"></small><button class="btn" id="og" type="button" hidden>Start race</button><button class="btn" id="odc" type="button" hidden style="margin-top:6px;background:linear-gradient(135deg,#7b5cff,#3d7bff)">Daily challenge</button><small id="ob"></small></div>
     <button class="nitro" id="nb" type="button" hidden>NITRO</button></div>`;
   const box=root.querySelector('.g3d'),$=id=>root.querySelector('#'+id);
   let alive=true,raf=0,ldP=0,fwd=null;const cleanups=[];
@@ -912,7 +912,7 @@ function cheetah3d(root,opts={}){
   const score=()=>Math.floor(s.dist)+s.miss*50+(s.dp||0);
   const row=()=>{const n=1+(R()<Math.min(.5+crRun*.008,s.dist/1400+crRun*.012)?1:0),used=new Set();
     for(let i=0;i<n;i++){let l,k=0;do{l=Math.floor(R()*4);k++}while(used.has(l)&&k<9);used.add(l);spawn(l,-215-i*7)}};
-  const begin=dc=>{if(pv){pv=null;applyCust();drawGar()}dcRun=dc===true;crRun=dc==='cr'?crL:0;let h=7;for(const ch of dcDay+TR)h=(h*31+ch.charCodeAt(0))>>>0;R=dcRun?seeded(h):Math.random;reset();s.mode='play';s.speed=34;$('ov').hidden=true;$('nb').hidden=!mobile;audio();if(ac&&ac.state==='suspended')ac.resume()};
+  const begin=dc=>{if(pv){pv=null;applyCust();drawGar()}dcRun=dc===true;crRun=dc==='cr'?crL:0;let h=7;for(const ch of dcDay+TR)h=(h*31+ch.charCodeAt(0))>>>0;R=dcRun?seeded(h):Math.random;reset();s.mode='play';s.speed=34;if(!dcRun&&!opts.rec&&!opts.shot){const bo=load('cheetah-boosts',{}),got=[];if(bo.shield){s.shield=1;delete bo.shield;got.push('Shield on')}if(bo.head&&!crRun){s.dist=300;s.speed=64;delete bo.head;got.push('Head start +300 m')}if(bo.nitro){s.mega=6;delete bo.nitro;got.push('Mega nitro')}if(got.length){save('cheetah-boosts',bo);setTimeout(()=>alive&&pop(got.join(' · ')),400)}}$('ov').hidden=true;$('nb').hidden=!mobile;audio();if(ac&&ac.state==='suspended')ac.resume()};
   const crash=()=>{s.mode='over';s.shake=.6;boom();const sc=score(),nb=sc>best&&sc>0;if(sc>best){best=sc;save('best-cheetah',best)}
     let dcTxt='';if(dcRun){dcRun=false;save('cheetah-dc',{day:dcDay,score:sc});coins+=50;save('cheetah-coins',coins);dcTxt=`<span class="mdone">Daily challenge score: ${sc} · +50 bonus coins · new traffic tomorrow</span>`}
     for(let i=0;i<45;i++)emit(smoke,s.px+(Math.random()-.5)*2,.8,-1,(Math.random()-.5)*8,Math.random()*6,(Math.random()-.5)*5,1.3);
@@ -946,7 +946,13 @@ function cheetah3d(root,opts={}){
   $('oh').textContent='Cheetah Chase';
   $('op').textContent=mobile?'Hold the left or right side of the screen to steer. Hold NITRO to boost. Pass cars close for bonus nitro. Weave hard left and right to chain drifts for bonus points. New: Career mode, 30 levels.':'Steer with the arrow keys or A and D. Hold Space for nitro, Down to brake. Pass cars close for bonus nitro. Weave hard left and right to chain drifts for bonus points. New: Career mode, 30 levels.';
   $('og').hidden=false;$('ob').textContent=best?'Best score: '+best:'';
-  const drawGar=()=>{const g=$('gar');g.innerHTML='';CARS.forEach(c=>{const has=owned.includes(c.id),b=document.createElement('button');b.type='button';b.className='gb'+(c.id===sel?' on':'');
+  
+  /* coin shop: one-race power-ups (no real money). Saved in tz-cheetah-boosts, used on the next normal or career race (not the daily challenge) */
+  function drawShop(){const el=$('shop');if(!el||opts.shot||opts.rec)return;const bo=load('cheetah-boosts',{}),SHOP=[['shield','\u{1F6E1} Shield',120,'Survive one crash'],['head','\u{1F680} Head start',150,'Start 300 m down the road (not in career)'],['nitro','⚡ Mega nitro',80,'Nitro never runs out for the first 6 s']];
+    el.innerHTML='<b style="display:block;width:100%;font-size:12px;opacity:.85;margin:4px 0 2px">Power-ups for your next race</b>';
+    SHOP.forEach(([k,n,cost,d])=>{const b=document.createElement('button');b.type='button';b.className='gb'+(bo[k]?' on':'');b.title=d;b.innerHTML=`<b>${n}</b><small>${bo[k]?'Ready ✔':(coins<cost?'\u{1F512} ':'')+cost+' coins'}</small>`;
+      b.onclick=()=>{const bb=load('cheetah-boosts',{});if(bb[k]){pop(d);return}if(coins<cost){pop('Need '+cost+' coins');return}coins-=cost;save('cheetah-coins',coins);bb[k]=1;save('cheetah-boosts',bb);blip(520,1040,.12,'triangle',.07);pop(n+' ready: '+d);drawGar()};el.appendChild(b)})}
+  const drawGar=()=>{drawShop();const g=$('gar');g.innerHTML='';CARS.forEach(c=>{const has=owned.includes(c.id),b=document.createElement('button');b.type='button';b.className='gb'+(c.id===sel?' on':'');
       b.innerHTML=`<b>${c.name}</b><small>${has?(c.id===sel?'Selected':'Tap to use'):'🔒 '+c.cost+' coins'}</small>`;
       b.onclick=()=>{if(!has){if(coins<c.cost)return;coins-=c.cost;owned.push(c.id);save('cheetah-coins',coins);save('cheetah-owned',owned)}sel=c.id;carDef=c;save('cheetah-car',sel);loadCar(sel);s.spin=1;blip(500,900,.12,'triangle',.07);drawGar()};g.appendChild(b)});
     {const el=$('upg');if(el){el.innerHTML='';const u=U();[['Engine','top speed'],['Grip','handling'],['Nitro','lasts longer']].forEach(([n,d],i)=>{const lv=u[i],cost=80*(lv+1),b=document.createElement('button');b.type='button';b.className='gb';
@@ -1005,7 +1011,7 @@ function cheetah3d(root,opts={}){
   function step(dt,noHit){rainUpd(dt);s.t+=dt;s.shake=Math.max(0,s.shake-dt);
     const play=s.mode==='play',over=s.mode==='over';
     const steer=play?Math.max(-1,Math.min(1,inp.r-inp.l+inp.ts+(rc.on?rc.steer:0))):0;
-    const wantN=play&&(inp.n||inp.tn||(rc.on&&rc.nitro))&&s.nit>1;if(wantN&&!s.nitOn)whoosh();s.nitOn=!!wantN;if(s.nitOn)s.nt=(s.nt||0)+dt;
+    if(play&&s.mega>0){s.mega-=dt;s.nit=100}const wantN=play&&(inp.n||inp.tn||(rc.on&&rc.nitro))&&s.nit>1;if(wantN&&!s.nitOn)whoosh();s.nitOn=!!wantN;if(s.nitOn)s.nt=(s.nt||0)+dt;
     if(play){s.base=Math.min(80+crRun*.4,46+crRun*.8+s.dist/50)*carDef.top*(1+.03*U()[0]);const tgt=wantN?s.base+28:(inp.b?s.base*.62:s.base);
       s.speed+=(tgt-s.speed)*Math.min(1,dt*(wantN?3.5:1.3));s.nit=wantN?Math.max(0,s.nit-32*(1-.08*U()[2])*dt):Math.min(100,s.nit+7*dt)}
     else if(!over)s.speed+=(14-s.speed)*Math.min(1,dt*2);
@@ -1024,7 +1030,7 @@ function cheetah3d(root,opts={}){
     wheels.forEach(w=>w.rotation.x-=dz/.5);
     for(let i=traffic.length-1;i>=0;i--){const o=traffic[i],u=o.userData;o.position.z+=over?0:(s.speed-u.vt)*dt;o.children.forEach(c=>{if(c.isGroup)c.rotation.x-=(over?0:(s.speed-u.vt)*dt)/.5});
       const adx=Math.abs(o.position.x-s.px),adz=Math.abs(o.position.z);
-      if(s.mode==='play'&&!noHit&&adx<2.0&&adz<2.15+u.half)crash();
+      if(s.mode==='play'&&!noHit&&adx<2.0&&adz<2.15+u.half){if(s.shield){s.shield=0;scene.remove(o);traffic.splice(i,1);s.shake=.5;s.speed*=.8;pop('Shield saved you!');blip(300,900,.25,'triangle',.1);continue}crash()}
       if(adz<3.8)u.minDx=Math.min(u.minDx,adx);
       if(!u.done&&o.position.z>3.8){u.done=true;if(s.mode==='play'&&u.minDx<3.15){s.miss++;s.nit=Math.min(100,s.nit+12);pop(['Close call! +50','Near miss! +50','Whoa! +50'][s.miss%3]);blip(700,1300,.12,'sine',.1)}}
       if(o.position.z>16){scene.remove(o);traffic.splice(i,1)}}
