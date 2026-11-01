@@ -314,7 +314,7 @@ function gamePage(g,v){
   const more=sorted().filter(x=>x.id!==g.id).slice(0,8);
   v.innerHTML=`<div class="game"><div>
     <div class="player" id="player" style="--c1:${g.c1};--c2:${g.c2}">
-      <div class="cover"><h1>${esc(g.name)}</h1>${g.play?'<button class="btn" id="start">Play now</button>':'<p style="color:#fff;font-weight:800;margin:0">Maybe coming soon to TopZoo</p>'}</div></div>
+      <div class="cover"${THUMBS[g.id]?` style="background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.55)),url(${THUMBS[g.id]}) center/cover"`:''}><h1>${esc(g.name)}</h1>${g.play?'<button class="btn" id="start">Play now</button>':'<p style="color:#fff;font-weight:800;margin:0">Maybe coming soon to TopZoo</p>'}</div></div>
     <div class="under"><h1>${esc(g.name)}</h1>${g.play?'<button class="btn ghost" id="fs">Full screen</button>':''}</div>${g.play?'<p class="tip">Tip: turn your phone sideways and tap Full screen for a bigger game.</p>':''}
     <div class="info"><div class="kv"><span class="chip">${CAT[g.cat]}</span><span class="chip">${g.play?'TopZoo Original':'In development'}</span>${g.d3?'<span class="chip">3D</span>':''}<span class="chip">Works on phone and PC</span></div>
       ${g.play?`<p><b>How to play.</b> ${esc(g.how)}</p><p>${esc(g.about)}</p>`:'<p>This game is still being made. Try one of the TopZoo Originals while you wait.</p>'}</div>
