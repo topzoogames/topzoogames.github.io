@@ -813,10 +813,10 @@ function zookart3d(root,opts={}){
 .zk-pad button.on{background:rgba(255,190,40,.85);color:#4a2500}
 .zk-pad .dr{width:96px;height:96px;font:400 20px var(--display),sans-serif;background:rgba(255,120,30,.6)}
 .zk-big{position:absolute;z-index:2;left:50%;top:36%;transform:translate(-50%,-50%) scale(1);font-family:var(--display);font-size:clamp(70px,18vw,150px);color:#ffe14a;-webkit-text-stroke:4px #5a2400;paint-order:stroke fill;text-shadow:0 7px 0 #5a2400;pointer-events:none;opacity:0;transition:opacity .15s,transform .25s}
-.zk canvas.zk-map{position:absolute;z-index:2;inset:auto 12px 12px auto;width:128px;height:128px;pointer-events:none}
-.zk-pos{position:absolute;z-index:2;left:14px;bottom:10px;font-family:var(--display);font-size:clamp(44px,8vw,78px);line-height:1;color:#fff;-webkit-text-stroke:3px #5a2400;paint-order:stroke fill;text-shadow:0 5px 0 #5a2400;pointer-events:none}
+.zk canvas.zk-map{position:absolute;z-index:2;inset:auto 12px 12px auto;width:128px;height:128px;pointer-events:none;border-radius:16px;background:radial-gradient(rgba(16,78,98,.55),rgba(6,36,52,.75));border:1px solid rgba(110,240,255,.6);box-shadow:0 0 14px rgba(60,220,255,.4)}
+.zk-pos{position:absolute;z-index:2;left:14px;bottom:10px;font-family:var(--display);font-size:clamp(44px,8vw,78px);line-height:1;color:#ffe14a;-webkit-text-stroke:3px #10324a;paint-order:stroke fill;text-shadow:0 5px 0 #10324a,0 0 18px rgba(60,220,255,.55);pointer-events:none}
 .zk-pos small{font-size:.45em}
-.zk-help{position:absolute;z-index:2;left:50%;bottom:12px;transform:translateX(-50%);font-weight:800;font-size:12px;color:#fff;background:rgba(50,18,0,.5);border-radius:99px;padding:5px 12px;pointer-events:none;white-space:nowrap}
+.zk-help{position:absolute;z-index:2;left:50%;bottom:12px;transform:translateX(-50%);font-weight:800;font-size:12px;color:#fff;background:rgba(6,36,52,.7);border:1px solid rgba(110,240,255,.5);box-shadow:0 0 10px rgba(60,220,255,.3);border-radius:99px;padding:5px 14px;pointer-events:none;white-space:nowrap}
 .zk.touch .zk-help{display:none}
 .zk.touch canvas.zk-map{top:auto;bottom:auto;top:62px;right:10px;width:84px;height:84px;opacity:.85}
 .zk.touch .zk-pos{display:none}
