@@ -301,6 +301,9 @@ const GAMES=[
   how:'On a computer, steer with the arrow keys or A and D, hold Space or Shift for nitro, and press Down to brake. On a phone or tablet, hold the left or right side of the screen to steer and hold the NITRO button to boost. Pass traffic close for bonus points and extra nitro. Weave hard left and right to chain drifts: the longer the chain, the bigger the multiplier. Hit a car and the race is over. Career mode has 30 levels with 3 goals each: earn stars to open the next level and win coins.',
   about:'A 3D night-city highway race. Weave through traffic, drift, and burn nitro in the fastest cheetah-spotted car in the zoo.'},
 ];
+/* user 2026-11-01: show ONLY Zoo Kart for now; other games stay in the code (add ids to SHOW to bring them back) */
+const SHOW=['zoo-kart'];
+const ALL_GAMES=GAMES.slice();GAMES.splice(0,GAMES.length,...ALL_GAMES.filter(g=>SHOW.includes(g.id)));
 const byId=Object.fromEntries(GAMES.map(g=>[g.id,g]));
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const load=(k,d)=>{try{const v=localStorage.getItem('tz-'+k);return v==null?d:JSON.parse(v)}catch(e){return d}};
@@ -322,7 +325,7 @@ const sorted=()=>[...GAMES].sort((a,b)=>(b.play?1:0)-(a.play?1:0));
 function rail(active){
   const link=(h,t,ic)=>`<a href="#${h}" class="${active===h?'on':''}"><i class="fa-solid ${ic}"></i>${t}</a>`;
   document.getElementById('rail').innerHTML=link('home','Home','fa-house')+link('originals','All Games','fa-gamepad')+link('popular','Popular','fa-fire')+link('new','New games','fa-star')+'<hr>'+
-    CATS.filter(([k])=>GAMES.some(g=>g.cat===k&&g.play)).map(([k,t])=>link('c-'+k,t,CICON[k]||'fa-gamepad')).join('')+'<hr>'+link('coming','Coming soon','fa-hourglass-half')+link('about','About','fa-circle-info');
+    CATS.filter(([k])=>GAMES.some(g=>g.cat===k&&g.play)).map(([k,t])=>link('c-'+k,t,CICON[k]||'fa-gamepad')).join('')+'<hr>'+(GAMES.some(g=>!g.play)?link('coming','Coming soon','fa-hourglass-half'):'')+link('about','About','fa-circle-info');
   document.querySelectorAll('#tnav a').forEach(a=>a.classList.toggle('on',a.dataset.h===active));
 }
 
@@ -352,7 +355,7 @@ function render(){
   if(PAGES[h]){v.innerHTML=`<div class="page">${PAGES[h]}</div>${footer}`;return}
   const playable=GAMES.filter(g=>g.play),catKeys=CATS.map(c=>c[0]).filter(k=>playable.some(g=>g.cat===k));
   const catTiles=catKeys.map(k=>{const g=playable.find(x=>x.cat===k),t=THUMBS[g.id];return `<a class="cat${t?'':' ph'}" href="#c-${k}" style="${t?`background-image:url(${t})`:`background:linear-gradient(135deg,${g.c1},${g.c2})`}">${t?'':`<i class="fa-solid ${CICON[k]}"></i>`}<span>${CAT[k]}</span></a>`}).join('')+
-    `<a class="cat ph" href="#new" style="background:linear-gradient(135deg,#2b1a5c,#123a5c)"><i class="fa-solid fa-star"></i><span>New</span></a><a class="cat ph" href="#coming" style="background:linear-gradient(135deg,#1d4a2f,#2b1a5c)"><i class="fa-solid fa-paw"></i><span>Coming soon</span></a>`;
+    `<a class="cat ph" href="#new" style="background:linear-gradient(135deg,#2b1a5c,#123a5c)"><i class="fa-solid fa-star"></i><span>New</span></a>`+(GAMES.some(g=>!g.play)?`<a class="cat ph" href="#coming" style="background:linear-gradient(135deg,#1d4a2f,#2b1a5c)"><i class="fa-solid fa-paw"></i><span>Coming soon</span></a>`:'');
   v.innerHTML='<section class="hero" id="hero" aria-label="Featured game"></section><section class="cats">'+catTiles+'</section>'+shelf('Popular Games',playable,'#popular')+shelf('New Games',playable.filter(g=>g.isNew),'#new')+
     catKeys.map(k=>shelf(CAT[k]+' games',playable.filter(g=>g.cat===k),'#c-'+k)).join('')+shelf('Coming soon',GAMES.filter(g=>!g.play),'#coming')+footer;
   paintHero();restartHero();window.scrollTo(0,0);
@@ -397,7 +400,7 @@ function gamePage(g,v){
     <div class="under"><h1>${esc(g.name)}</h1>${g.play?'<button class="btn ghost" id="fs">Full screen</button>':''}</div>${g.play?'<p class="tip">Tip: turn your phone sideways and tap Full screen for a bigger game.</p>':''}
     <div class="info"><div class="kv"><span class="chip">${CAT[g.cat]}</span><span class="chip">${g.play?'TopZoo Original':'In development'}</span>${g.d3?'<span class="chip">3D</span>':''}<span class="chip">Works on phone and PC</span></div>
       ${g.play?`<p><b>How to play.</b> ${esc(g.how)}</p><p>${esc(g.about)}</p>`:'<p>This game is still being made. Try one of the TopZoo Originals while you wait.</p>'}</div>
-    </div><aside class="side">${ad(300,250)}<h2>More games</h2><div class="grid">${more.map(tile).join('')}</div></aside></div>${footer}`;
+    </div><aside class="side">${ad(300,250)}${more.length?`<h2>More games</h2><div class="grid">${more.map(tile).join('')}</div>`:'<h2>More games soon</h2><p class="empty">New TopZoo games are on the way. Follow us on Facebook to hear first.</p>'}</aside></div>${footer}`;
   window.scrollTo(0,0);
   if(!g.play) return;
   const p=document.getElementById('player');
