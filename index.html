@@ -974,11 +974,11 @@ function zookart3d(root,opts={}){
     for(const [x,z] of[[-.8,.8],[.8,.8],[-.8,-.8],[.8,-.8]]){const w=new T.Mesh(new T.CylinderGeometry(.33,.33,.3,10),M('#222'));w.rotation.z=Math.PI/2;const wg=new T.Group();wg.position.set(x,.33,z);wg.add(w);b.add(wg);k.wheels.push(wg);if(z>0)k.fw.push(wg)}
     const hd=new T.Mesh(new T.SphereGeometry(.4,10,8),M('#ffb347'));hd.position.set(0,1.15,-.2);b.add(hd)}
   karts.forEach(codeKart);
-  const protos={};let kartP=null,seat=new T.Vector3(0,.5,-.2);
+  const protos={};let kartP=null,rocketP=null,RSC=1,seat=new T.Vector3(0,.5,-.2);const rseat=new T.Vector3();
   const gl=()=>T.GLTFLoader?Promise.resolve():new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';sc.onload=res;sc.onerror=rej;document.head.appendChild(sc)});
   const ld=u=>new Promise(res=>new T.GLTFLoader().load(u,g=>res(g.scene),undefined,()=>res(null)));
   const ANIM={tiger:{f:'tiger.glb',h:1.8,yaw:0,y:0},penguin:{f:'penguin.glb',h:1.2,yaw:0,y:0},rhino:{f:'rhino.glb',h:1.7,yaw:0,y:0}};
-  gl().then(()=>Promise.all([ld('models/kart-oobi.glb'),...Object.keys(ANIM).map(a=>ld('models/'+ANIM[a].f).then(m=>{protos[a]=m}))])).then(([kp])=>{if(!alive)return;lb(90);
+  gl().then(()=>Promise.all([ld('models/kart-oobi.glb'),ld('models/rocket-kart.glb').then(m=>{if(!m)return;const bb=new T.Box3().setFromObject(m),sz=bb.getSize(new T.Vector3());RSC=2.9/sz.z;m.scale.setScalar(RSC);m.position.y=-bb.min.y*RSC;m.traverse(o=>{if(o.isMesh){o.castShadow=true;const mt=o.material;if(mt&&mt.color&&!mt.userData.fx){mt.userData.fx=1;mt.color.convertLinearToSRGB();if(mt.metalness>.5){mt.metalness=.35;mt.roughness=Math.max(.3,mt.roughness)}if(mt.emissive)mt.emissive.convertLinearToSRGB()}}});rseat.set(0,.74*RSC+m.position.y,-.32*RSC);rocketP=m}),...Object.keys(ANIM).map(a=>ld('models/'+ANIM[a].f).then(m=>{protos[a]=m}))])).then(([kp])=>{if(!alive)return;lb(90);
     if(kp){const bb=new T.Box3().setFromObject(kp),sz=bb.getSize(new T.Vector3()),sc=2.7/sz.z;kp.scale.setScalar(sc);kp.position.y=-bb.min.y*sc;
       kp.traverse(o=>{if(o.isMesh)o.castShadow=true});
       const c=kp.getObjectByName('character');if(c){seat.copy(c.position).multiplyScalar(sc);seat.y+=kp.position.y;c.visible=false}kartP=kp}
@@ -987,16 +987,16 @@ function zookart3d(root,opts={}){
       const w=new T.Group();w.add(m);w.rotation.y=ANIM[a].yaw;protos[a]=w}
     karts.forEach(dress);lb(100)}).catch(e=>{console.warn('zookart models',e);lb(100)});
   function dress(k){if(!kartP)return;const b=k.body;while(b.children.length)b.remove(b.children[0]);k.wheels=[];k.fw=[];
-    const m=kartP.clone(true);if(k.d.tint){const tn=new T.Color(k.d.tint);m.traverse(o=>{if(o.isMesh&&o.material){o.material=o.material.clone();o.material.color.copy(tn)}})}
+    const useR=k===P1&&rocketP;const m=(useR?rocketP:kartP).clone(true);if(k.d.tint&&!useR){const tn=new T.Color(k.d.tint);m.traverse(o=>{if(o.isMesh&&o.material){o.material=o.material.clone();o.material.color.copy(tn)}})}
     m.traverse(o=>{if(o.name&&o.name.indexOf('wheel')===0){k.wheels.push(o);if(o.name.indexOf('front')>0)k.fw.push(o)}});b.add(m);
-    const an=protos[k.d.a];if(an){const dr=an.clone(true);dr.position.copy(seat);dr.position.y+=ANIM[k.d.a].y;b.add(dr);k.drv=dr}
-    themeKart(k,b,m)}
+    const an=protos[k.d.a];if(an){const dr=an.clone(true);dr.position.copy(useR?rseat:seat);dr.position.y+=ANIM[k.d.a].y;b.add(dr);k.drv=dr}
+    themeKart(k,b,m,useR)}
   /* themed add-ons: tiger = purple rocket kart, rhino = rugged jeep-kart, penguin = ice car; flames on boost */
   const flameM=new T.MeshBasicMaterial({color:'#ffb43a',transparent:true,opacity:.9,blending:T.AdditiveBlending,depthWrite:false}),flameIn=new T.MeshBasicMaterial({color:'#fff6c0',transparent:true,opacity:.95,blending:T.AdditiveBlending,depthWrite:false});
   const fG=new T.ConeGeometry(.2,1,8);fG.translate(0,.5,0);fG.rotateX(-Math.PI/2);
-  function themeKart(k,b,m){const bb=new T.Box3().setFromObject(m),sz=bb.getSize(new T.Vector3()),W=sz.x,Lz=sz.z,H=sz.y,z0=bb.min.z,z1=bb.max.z,y0=bb.min.y;const a=k.d.a;
+  function themeKart(k,b,m,useR){const bb=new T.Box3().setFromObject(m),sz=bb.getSize(new T.Vector3()),W=sz.x,Lz=sz.z,H=sz.y,z0=bb.min.z,z1=bb.max.z,y0=bb.min.y;const a=k.d.a;
     const add=(g,mat,x,y,z,rx=0,ry=0,rz=0)=>{const o=new T.Mesh(g,mat);o.position.set(x,y,z);o.rotation.set(rx,ry,rz);o.castShadow=true;b.add(o);return o};
-    if(a==='tiger'){const pm=new T.MeshStandardMaterial({color:'#7b3dff',roughness:.35,metalness:.3}),gm=new T.MeshStandardMaterial({color:'#ffc93a',roughness:.3,metalness:.6});
+    if(useR){}else if(a==='tiger'){const pm=new T.MeshStandardMaterial({color:'#7b3dff',roughness:.35,metalness:.3}),gm=new T.MeshStandardMaterial({color:'#ffc93a',roughness:.3,metalness:.6});
       add(new T.BoxGeometry(W*.8,.07,.4),pm,0,y0+H*.74,z0+.2);for(const sd of[-1,1]){add(new T.BoxGeometry(.06,H*.24,.3),pm,sd*W*.3,y0+H*.62,z0+.22);add(new T.BoxGeometry(.05,.1,.42),gm,sd*W*.4,y0+H*.76,z0+.2)}
       add(new T.ConeGeometry(.16,.5,6),pm,0,y0+H*.55,z1-.05,Math.PI/2,0,0)}
     else if(a==='rhino'){const dm=new T.MeshStandardMaterial({color:'#3b3b40',roughness:.5,metalness:.5});const rb=new T.TorusGeometry(W*.42,.06,6,14,Math.PI);
@@ -1004,7 +1004,7 @@ function zookart3d(root,opts={}){
       add(new T.TorusGeometry(.26,.11,6,12),new T.MeshStandardMaterial({color:'#222',roughness:.9}),0,y0+H*.55,z0-.08)}
     else if(a==='penguin'){const ice=new T.MeshStandardMaterial({color:'#bff0ff',roughness:.1,metalness:.1,transparent:true,opacity:.6});const wm=new T.MeshStandardMaterial({color:'#ffffff',roughness:.4});
       add(new T.BoxGeometry(W*.5,H*.2,.04),ice,0,y0+H*.58,z1-Lz*.28,-.45,0,0);for(const sd of[-1,1])add(new T.OctahedronGeometry(.14,0),wm,sd*W*.3,y0+H*.55,z0+.3,0,0,0).scale.set(.6,1.5,.6)}
-    const fl=new T.Group();for(const sd of[-1,1]){const o=new T.Mesh(fG,flameM);o.position.set(sd*W*.2,y0+H*.42,z0);fl.add(o);const i=new T.Mesh(fG,flameIn);i.scale.set(.5,.5,.6);i.position.copy(o.position);fl.add(i)}
+    const fl=new T.Group();for(const sd of[-1,1]){const o=new T.Mesh(fG,flameM);if(useR){o.position.set(sd*.36*RSC,1.16*RSC+m.position.y,-1.43*RSC);o.rotation.x=.61}else o.position.set(sd*W*.2,y0+H*.42,z0);fl.add(o);const i=new T.Mesh(fG,flameIn);i.scale.set(.5,.5,.6);i.position.copy(o.position);i.rotation.copy(o.rotation);fl.add(i)}
     fl.visible=false;b.add(fl);k.fl=fl}
   /* ---- state ---- */
   let s=null;const inp={L:0,R:0,B:0,D:0};
