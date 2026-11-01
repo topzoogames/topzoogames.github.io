@@ -819,8 +819,8 @@ function drift3d(root,opts={}){
     const fx=Math.sin(s.h),fz=Math.cos(s.h),rx=fz,rz=-fx;
     let vf=s.vx*fx+s.vz*fz,vr=s.vx*rx+s.vz*rz;const sp=Math.hypot(s.vx,s.vz);
     vf+=(thr*15-brk*26-vf*.48)*dt;if(vf<-6)vf=-6;
-    const grip=inp.hb&&play?1.1:(Math.abs(vr)>4?3.2:9);vr-=vr*Math.min(1,grip*dt);
-    const turn=st*Math.min(1,sp/8)*(inp.hb?2.6:1.9);s.yr+=(turn-s.yr)*Math.min(1,dt*8);s.h-=s.yr*dt*(vf<0?-1:1);
+    const grip=inp.hb&&play?1.1:(Math.abs(vr)>4?3.2:9),lost=vr*Math.min(1,grip*dt);vr-=lost;if(play&&thr&&vf>0)vf+=Math.abs(lost)*.55;
+    const slip=Math.atan2(Math.abs(vr),Math.max(.1,Math.abs(vf)))*57.3,assist=slip>48?Math.max(.25,1-(slip-48)/30):1,turn=st*Math.min(1,sp/8)*(inp.hb?2.6:1.9)*assist;s.yr+=(turn-s.yr)*Math.min(1,dt*8);s.h-=s.yr*dt*(vf<0?-1:1);
     s.vx=fx*vf+rx*vr;s.vz=fz*vf+rz*vr;s.x+=s.vx*dt;s.z+=s.vz*dt;
     /* arena wall */
     const r=Math.hypot(s.x,s.z);if(r>AR-1.6){const nx=s.x/r,nz=s.z/r,vn=s.vx*nx+s.vz*nz;s.x=nx*(AR-1.6);s.z=nz*(AR-1.6);if(vn>0){s.vx-=nx*vn*1.6;s.vz-=nz*vn*1.6;if(vn>6)lose('Wall! combo lost')}}
