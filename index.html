@@ -979,7 +979,7 @@ function zookart3d(root,opts={}){
   const setMute=()=>{$('kmu').textContent=muted?'🔇':'🔊'};setMute();
   $('kmu').onclick=e=>{e.stopPropagation();muted=!muted;save('kart-mute',muted);setMute();if(muted){music(false);engine(false);screech(false)}else if(s&&s.mode==='race'){music(true);engine(true)}};
   /* ---- karts ---- */
-  const DRIVERS=[{n:'You',a:'tiger',tint:null},{n:'Penny Penguin',a:'penguin',tint:'#a8d8ff'},{n:'Rocco Rhino',a:'rhino',tint:'#b8ff9e'},{n:'Pip Penguin',a:'penguin',tint:'#fff08a'},{n:'Ruby Rhino',a:'rhino',tint:'#ffb0d8'},{n:'Pablo Penguin',a:'penguin',tint:'#d6b8ff'}];
+  const DRIVERS=[{n:'You',a:'tiger',tint:null},{n:'Penny Penguin',a:'penguin',tint:'#a8d8ff'},{n:'Rocco Rhino',a:'rhino',tint:'#93a93f'},{n:'Pip Penguin',a:'penguin',tint:'#fff08a'},{n:'Ruby Rhino',a:'rhino',tint:'#ffb0d8'},{n:'Pablo Penguin',a:'penguin',tint:'#d6b8ff'}];
   const SKILL=[1,.885,.91,.935,.955,.975];
   const shadowM=new T.MeshBasicMaterial({map:dotT,color:'#000',transparent:true,opacity:.45,depthWrite:false});
   const karts=DRIVERS.map((d,k)=>{const g=new T.Group(),body=new T.Group();g.add(body);scene.add(g);
