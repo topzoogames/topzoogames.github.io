@@ -689,7 +689,7 @@ window.__cheetahShot=()=>new Promise(res=>{const d=document.createElement('div')
 function drift3d(root,opts={}){
   root.innerHTML=`<div class="g3d night"><div class="hud"><div><b id="dt">90</b><small>seconds</small></div><div><b id="dk">0</b><small>km/h</small></div><div><b id="ds">0</b><small>drift pts</small></div><div><b id="dc">x1</b><small>combo</small></div></div>
     <div class="pop" id="pp"></div>
-    <div class="ov show3d" id="ov"><h2 id="oh">Cheetah Drift Arena</h2><div class="ldbar" id="lbw"><i id="lb"></i></div><p id="op">Loading the arena…</p><div class="gar" id="trk"></div><button class="btn" id="og" type="button" hidden>Start session</button><small id="ob"></small></div>
+    <div class="ov show3d" id="ov"><h2 id="oh">Cheetah Drift Arena</h2><div class="ldbar" id="lbw"><i id="lb"></i></div><p id="op">Loading the arena…</p><div class="gar" id="trk"></div><div class="gar mis" id="mis"></div><button class="btn" id="og" type="button" hidden>Start session</button><small id="ob"></small></div>
     <div id="tc" hidden style="position:absolute;inset:auto 0 12px 0;display:flex;justify-content:space-between;padding:0 12px;z-index:3;pointer-events:none">
       <div style="display:flex;gap:10px"><button class="nitro" id="tl" type="button" style="position:static;pointer-events:auto">◀</button><button class="nitro" id="tr" type="button" style="position:static;pointer-events:auto">▶</button></div>
       <button class="nitro" id="th" type="button" style="position:static;pointer-events:auto">DRIFT</button></div></div>`;
@@ -813,7 +813,7 @@ function drift3d(root,opts={}){
       const nc=cones.reduce((m,c)=>{const d=Math.hypot(c.position.x-s.x,c.position.z-s.z);return d<9&&(!m||d<m.d)?{c,d}:m},null);
       if(nc){if(s.spinC!==nc.c){s.spinC=nc.c;s.spin=0;s.lastA=Math.atan2(s.x-nc.c.position.x,s.z-nc.c.position.z)}const an=Math.atan2(s.x-nc.c.position.x,s.z-nc.c.position.z);let da=an-s.lastA;if(da>Math.PI)da-=Math.PI*2;if(da<-Math.PI)da+=Math.PI*2;s.spin+=da;s.lastA=an;
         if(Math.abs(s.spin)>Math.PI*2){s.spin=0;s.pts+=150;s.donuts=(s.donuts||0)+1;pop('Donut! +150');blip(600,1500,.25,'triangle',.09)}}else s.spinC=null;
-      s.combo+=s.ang*sp*dt*.06*(inZ?2:1);s.mult=Math.min(5,s.mult+dt*.35);s.calm=0;
+      s.combo+=s.ang*sp*dt*.06*(inZ?2:1);if(inZ)s.zoneT=(s.zoneT||0)+dt;s.mult=Math.min(5,s.mult+dt*.35);s.calm=0;
       const bx=Math.sin(s.h),bz=Math.cos(s.h);for(const sx of[-1,1]){const wx=s.x-bx*1.5+rx*sx*.85,wz=s.z-bz*1.5+rz*sx*.85;skid(wx,wz,s.h);if(Math.random()<.5)puff(wx,wz)}}
     else if(play){s.calm+=dt;if(s.calm>.9)bank()}
     if(scrG)scrG.gain.setTargetAtTime(play&&s.ang>14&&sp>9?.09:0,ac.currentTime,.05);
@@ -828,10 +828,20 @@ function drift3d(root,opts={}){
     $('dt').textContent=Math.ceil(s.t);$('dk').textContent=Math.round(sp*3.6);$('ds').textContent=s.pts+(s.combo>0?' +'+Math.round(s.combo*s.mult):'');$('dc').textContent='x'+s.mult.toFixed(1)}
   const render=()=>composer?composer.render():renderer.render(scene,cam);
   const best=()=>load('best-drift-arena',0);
-  function end(){s.mode='over';$('tc').hidden=true;const sc=s.pts,nb=sc>best();if(nb)save('best-drift-arena',sc);const coins=Math.floor(sc/40);if(coins>0)save('cheetah-coins',load('cheetah-coins',0)+coins);
-    $('oh').textContent='Time!';$('op').innerHTML=`${nb?'<span class="nbest">NEW BEST!</span>':''}<span class="res"><span><b>${sc}</b>drift pts</span><span><b>${s.best}</b>best drift</span><span><b>${s.donuts||0}</b>donuts</span><span class="rc"><b>+${coins}</b>coins</span></span><small style="display:block;opacity:.75;margin-top:4px">Coins are shared with Cheetah Chase and Rhino Rally. Wallet: ${load('cheetah-coins',0)}</small>`;
-    $('og').textContent='Drift again';drawTrk();$('ob').textContent='Best: '+Math.max(sc,best());$('ov').hidden=false;blip(520,1040,.25,'triangle',.08)}
-  const begin=()=>{reset();s.mode='play';$('ov').hidden=true;$('tc').hidden=!mobile;audio();if(ac&&ac.state==='suspended')ac.resume()};
+  function end(){s.mode='over';$('tc').hidden=true;const sc=s.pts,nb=sc>best();if(nb)save('best-drift-arena',sc);const coins=Math.floor(sc/40);if(coins>0)save('cheetah-coins',load('cheetah-coins',0)+coins);const md=misEnd();
+    $('oh').textContent='Time!';$('op').innerHTML=`${nb?'<span class="nbest">NEW BEST!</span>':''}<span class="res"><span><b>${sc}</b>drift pts</span><span><b>${s.best}</b>best drift</span><span><b>${s.donuts||0}</b>donuts</span><span class="rc"><b>+${coins}</b>coins</span></span>${md}<small style="display:block;opacity:.75;margin-top:4px">Coins are shared with Cheetah Chase and Rhino Rally. Wallet: ${load('cheetah-coins',0)}</small>`;
+    $('og').textContent='Drift again';drawTrk();$('mis').hidden=false;$('trk').hidden=false;$('ob').textContent='Best: '+Math.max(sc,best());$('ov').hidden=false;blip(520,1040,.25,'triangle',.08)}
+  const begin=()=>{reset();s.mode='play';$('ov').hidden=true;$('mis').hidden=true;$('trk').hidden=true;$('tc').hidden=!mobile;audio();if(ac&&ac.state==='suspended')ac.resume()};
+  /* 3 daily missions picked by date (from 5); coins into the shared wallet; saved in tz-drift-missions */
+  const DPOOL=[['pts','Score 600 drift pts in one session',600,60],['donut','Pull 2 donuts in one session',2,70],['one','Hold one drift worth 150+',150,60],['zone','Drift 8 s inside the green zone',8,70],['total','Score 2000 drift pts today',2000,80]];
+  const dDay=(()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()})();
+  let dms=load('drift-missions',null);if(!dms||dms.day!==dDay){let h=0;for(const ch of dDay)h=(h*31+ch.charCodeAt(0))>>>0;const ids=DPOOL.map(m=>m[0]);for(let k=ids.length-1;k>0;k--){h=(h*1103515245+12345)>>>0;const r=h%(k+1);[ids[k],ids[r]]=[ids[r],ids[k]]}dms={day:dDay,ids:ids.slice(0,3),done:[],prog:{}};save('drift-missions',dms)}
+  const drawMis=()=>{const el=$('mis');if(!el||opts.test)return;el.innerHTML='<b>Daily missions</b>'+dms.ids.map(id=>{const m=DPOOL.find(x=>x[0]===id),dn=dms.done.includes(id),pv=Math.min(m[2],Math.floor(dms.prog[id]||0));return `<span class="${dn?'ok':''}">${dn?'✔':'○'} ${m[1]} <i>${dn?'done':pv+'/'+m[2]}</i> <em>+${m[3]}</em></span>`}).join('')};
+  const misEnd=()=>{let out='';const run={pts:s.pts,donut:s.donuts||0,one:s.best,zone:s.zoneT||0};dms.prog.total=(dms.prog.total||0)+s.pts;
+    for(const id of dms.ids){if(dms.done.includes(id))continue;const m=DPOOL.find(x=>x[0]===id),v=id==='total'?dms.prog.total:run[id];if(id!=='total')dms.prog[id]=Math.max(dms.prog[id]||0,v);
+      if(v>=m[2]){dms.done.push(id);save('cheetah-coins',load('cheetah-coins',0)+m[3]);out+=`<span class="mdone">Mission done: ${m[1]} · +${m[3]} coins</span>`}}
+    save('drift-missions',dms);drawMis();return out};
+  drawMis();
   const drawTrk=()=>{const el=$('trk');if(!el||opts.test)return;el.innerHTML='';const bst=load('best-drift-arena',0);
     [['night','Neon Lot',0],['dusk','Sunset Docks',1000]].forEach(([id,n,need])=>{const ok=bst>=need,b=document.createElement('button');b.type='button';b.className='gb'+(id===AN?' on':'');
       b.innerHTML=`<b>${n}</b><small>${id===AN?'Arena selected':ok?'Tap to drive':'\u{1F512} Best '+need+' to unlock'}</small>`;b.onclick=()=>{if(!ok||id===AN)return;save('drift-arena',id);stop();fwd=drift3d(root,opts)};el.appendChild(b)})};
