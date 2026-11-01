@@ -1101,7 +1101,7 @@ function zookart3d(root,opts={}){
       k.body.rotation.z=(k.drift?k.dd*.06:-k.yawV*.03)+(k.bump>0?Math.sin(tm*60)*.05:0);k.bump=Math.max(0,(k.bump||0)-.016);
       if(k.drv){k.drv.position.y=seat.y+ANIM[k.d.a].y+Math.abs(Math.sin(tm*9+k.k))*Math.min(1,k.v/20)*.06;k.drv.rotation.z=k.yawV*.12;k.drv.rotation.x=-(k.boost>0?.12:0)}
       for(const w of k.wheels)w.rotation.x+=k.v*.016/.33;for(const w of k.fw)w.rotation.y=-(k.yawV*.25)}
-    if(s.mode==='menu'){P1.g.rotation.y=P1.h+s.t*.6}
+    if(s.mode==='menu'){P1.g.rotation.y=P1.h+s.t*.6;cam.setViewOffset(W,H,W>H*1.2?-W*.34:0,W>H*1.2?-H*.16:-H*.3,W,H)}else if(cam.view&&cam.view.enabled)cam.clearViewOffset();
     if(s.mode==='menu'||s.mode==='over'){const a=s.t*.25,r=7.5;cam.fov+=(48-cam.fov)*.1;cam.position.set(P1.x+Math.sin(P1.h+a+2.4)*r,2.6,P1.z+Math.cos(P1.h+a+2.4)*r);cam.lookAt(P1.x,.9,P1.z)}
     else{let d=P1.h-s.camH;d=Math.atan2(Math.sin(d),Math.cos(d));s.camH+=d*.12;const portrait=H>W,D=portrait?8.8:7,Hh=portrait?4.2:3.5;
       s.camY=(s.camY||0)+(P1.g.position.y-(s.camY||0))*.15;cam.position.set(P1.x-Math.sin(s.camH)*D,Hh+s.camY*.75,P1.z-Math.cos(s.camH)*D);
