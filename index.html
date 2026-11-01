@@ -282,6 +282,8 @@ h2{font-size:22px}
 .soc{display:flex;gap:10px}.soc a{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:#1877f2;color:#fff}
 @media (max-width:1180px){.homegrid{grid-template-columns:minmax(0,1fr)}.rcol{position:static;display:grid;grid-template-columns:1fr 1fr;gap:12px}.rcol .promo{display:none}}
 @media (max-width:860px){.rcol{grid-template-columns:1fr}.icat{flex:0 0 76px}}
+
+.nextg{margin-top:14px}.nextg .row{grid-auto-columns:minmax(150px,170px)}
 </style>
 
 <header class="bar">
@@ -439,13 +441,15 @@ function gamePage(g,v){
     <div class="player" id="player" style="--c1:${g.c1};--c2:${g.c2}">
       <div class="cover"${THUMBS[g.id]?` style="background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.55)),url(${THUMBS[g.id]}) center/cover"`:''}><h1>${esc(g.name)}</h1>${g.play?'<button class="btn" id="start">Play now</button>':'<p style="color:#fff;font-weight:800;margin:0">Maybe coming soon to TopZoo</p>'}</div></div>
     <div class="under"><h1>${esc(g.name)}</h1>${g.play?'<button class="btn ghost" id="fs">Full screen</button>':''}</div>${g.play?'<p class="tip">Tip: turn your phone sideways and tap Full screen for a bigger game.</p>':''}
+    ${(()=>{const nx=GAMES.filter(x=>x.play&&x.id!==g.id&&x.ext).slice(0,8);return nx.length?`<section class="shelf nextg"><div class="shelf-head"><h2>Play another game</h2><a href="#popular">View all</a></div><div class="row">${nx.map(tile).join('')}</div></section>`:''})()}
     <div class="info"><div class="kv"><span class="chip">${CAT[g.cat]}</span><span class="chip">${g.ext?'Partner game':g.play?'TopZoo Original':'In development'}</span>${g.d3?'<span class="chip">3D</span>':''}<span class="chip">Works on phone and PC</span></div>
-      ${g.ext?'<p>A free game from our partner Playgama. Press Play to start; it runs right here in your browser.</p>':g.play?`<p><b>How to play.</b> ${esc(g.how)}</p><p>${esc(g.about)}</p>`:'<p>This game is still being made. Try one of the TopZoo Originals while you wait.</p>'}</div>
+      ${g.ext?'<p>A free game from our partner Playgama. It runs right here in your browser, no download.</p>':g.play?`<p><b>How to play.</b> ${esc(g.how)}</p><p>${esc(g.about)}</p>`:'<p>This game is still being made. Try one of the TopZoo Originals while you wait.</p>'}</div>
     </div><aside class="side">${ad(300,250)}${more.length?`<h2>More games</h2><div class="grid">${more.map(tile).join('')}</div>`:'<h2>More games soon</h2><p class="empty">New TopZoo games are on the way. Follow us on Facebook to hear first.</p>'}</aside></div>${footer}`;
   window.scrollTo(0,0);
   if(!g.play) return;
   const p=document.getElementById('player');
   document.getElementById('start').onclick=()=>{p.innerHTML='';if(g.ext){p.innerHTML=`<iframe src="${g.url}" title="${esc(g.name)}" allow="autoplay; fullscreen; gamepad; clipboard-write" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;return}p.classList.toggle('dom',g.id==='banana-rush');stopGame=GAMEFN[g.id](p)};
+  if(g.ext) document.getElementById('start').click();
   document.getElementById('fs').onclick=async()=>{try{await p.requestFullscreen();if(screen.orientation&&screen.orientation.lock)await screen.orientation.lock('landscape')}catch(e){}};
 }
 
