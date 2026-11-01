@@ -687,7 +687,7 @@ window.__cheetahShot=()=>new Promise(res=>{const d=document.createElement('div')
 
 /* Cheetah Drift Arena (PROTOTYPE, tile still 'maybe coming soon'): open neon lot, slide physics with handbrake, drift combos, 90 s sessions; coins go to the shared wallet */
 function drift3d(root,opts={}){
-  root.innerHTML=`<div class="g3d night"><div class="hud"><div><b id="dt">90</b><small>seconds</small></div><div><b id="dk">0</b><small>km/h</small></div><div><b id="ds">0</b><small>drift pts</small></div><div><b id="dc">x1</b><small>combo</small></div></div>
+  root.innerHTML=`<div class="g3d night"><div class="hud"><div><b id="dt">90</b><small>seconds</small></div><div><b id="dk">0</b><small>km/h</small></div><div><b id="ds">0</b><small>drift pts</small></div><div><b id="dc">x1</b><small>combo</small></div><div class="hbtns"><button class="mute" id="hmu" type="button"></button></div></div>
     <div class="pop" id="pp"></div>
     <div class="ov show3d" id="ov"><h2 id="oh">Cheetah Drift Arena</h2><div class="ldbar" id="lbw"><i id="lb"></i></div><p id="op">Loading the arena…</p><div class="gar" id="trk"></div><div id="crr" class="mis crr"></div><div class="gar mis" id="mis"></div><button class="btn" id="og" type="button" hidden>Start session</button><small id="ob"></small></div>
     <div id="tc" hidden style="position:absolute;inset:auto 0 12px 0;display:flex;justify-content:space-between;padding:0 12px;z-index:3;pointer-events:none">
@@ -780,6 +780,20 @@ function drift3d(root,opts={}){
   const audio=()=>{if(ac)return;try{ac=new(window.AudioContext||window.webkitAudioContext)();eng=ac.createOscillator();eng.type='sawtooth';engG=ac.createGain();engG.gain.value=0;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=900;eng.connect(f);f.connect(engG);engG.connect(ac.destination);eng.start();
     const n=ac.createBuffer(1,ac.sampleRate,ac.sampleRate),d=n.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;const src=ac.createBufferSource();src.buffer=n;src.loop=true;const bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=2400;bp.Q.value=6;scrG=ac.createGain();scrG.gain.value=0;src.connect(bp);bp.connect(scrG);scrG.connect(ac.destination);src.start()}catch(e){ac=null}};
   cleanups.push(()=>{ac&&ac.close()});
+  /* original music loop made in code: 124 bpm, Em-C-G-D, kick + offbeat hat + bass + pluck arp; on/off saved in tz-drift-music-off */
+  let musOff=load('drift-music-off',false),musT=null,mBus=null,nextT=0,stepN=0;
+  const mBtn=$('hmu'),mLabel=()=>mBtn.textContent=musOff?'Music: off':'Music: on';mLabel();
+  const CH=[[82.4,164.8,196,246.9],[65.4,130.8,164.8,196],[98,196,246.9,293.7],[73.4,146.8,185,220]],SPB=60/124/2;
+  const note=(f,t,d,type,v,dest)=>{const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(dest);o.start(t);o.stop(t+d+.02)};
+  const kick=(t,dest)=>{const o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(40,t+.15);g.gain.setValueAtTime(.5,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);o.connect(g);g.connect(dest);o.start(t);o.stop(t+.22)};
+  const hat=(t,dest)=>{const n=ac.createBufferSource(),bf=ac.createBuffer(1,2205,44100),dd=bf.getChannelData(0);for(let i=0;i<dd.length;i++)dd[i]=(Math.random()*2-1)*(1-i/dd.length);n.buffer=bf;const f=ac.createBiquadFilter();f.type='highpass';f.frequency.value=7000;const g=ac.createGain();g.gain.value=.12;n.connect(f);f.connect(g);g.connect(dest);n.start(t)};
+  const sched=()=>{if(!ac||!mBus)return;while(nextT<ac.currentTime+.25){const t=nextT,st=stepN%64,ch=CH[(stepN>>4)%4];
+      if(st%4===0)kick(t,mBus);if(st%4===2)hat(t,mBus);if(st%2===0)note(ch[0]/2,t,SPB*1.6,'sawtooth',.08,mBus);
+      note(ch[1+(st%3)]*2,t,SPB*.9,'triangle',.05,mBus);nextT+=SPB;stepN++}};
+  const music=()=>{if(!ac)return;if(!mBus){mBus=ac.createGain();const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=3200;mBus.connect(lp);lp.connect(ac.destination)}
+    mBus.gain.setTargetAtTime(musOff?0:.5,ac.currentTime,.1);if(!musT){nextT=ac.currentTime+.05;musT=setInterval(sched,100)}};
+  cleanups.push(()=>clearInterval(musT));
+  mBtn.onclick=()=>{musOff=!musOff;save('drift-music-off',musOff);mLabel();audio();music()};
   const blip=(f0,f1,d,type,v)=>{if(!ac)return;const o=ac.createOscillator(),gg=ac.createGain();o.type=type;o.frequency.setValueAtTime(f0,ac.currentTime);o.frequency.exponentialRampToValueAtTime(f1,ac.currentTime+d);gg.gain.setValueAtTime(v,ac.currentTime);gg.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.connect(gg);gg.connect(ac.destination);o.start();o.stop(ac.currentTime+d)};
   const pop=t=>{const p=$('pp');p.textContent=t;p.classList.remove('on');void p.offsetWidth;p.classList.add('on')};
   /* state + physics: heading h, velocity (vx,vz); lateral grip drops with the handbrake / at big slip angles = drift */
@@ -831,7 +845,7 @@ function drift3d(root,opts={}){
   function end(){s.mode='over';$('tc').hidden=true;const sc=s.pts,nb=sc>best();if(nb)save('best-drift-arena',sc);const coins=Math.floor(sc/40);if(coins>0)save('cheetah-coins',load('cheetah-coins',0)+coins);const md=misEnd()+crEnd();
     $('oh').textContent='Time!';$('op').innerHTML=`${nb?'<span class="nbest">NEW BEST!</span>':''}<span class="res"><span><b>${sc}</b>drift pts</span><span><b>${s.best}</b>best drift</span><span><b>${s.donuts||0}</b>donuts</span><span class="rc"><b>+${coins}</b>coins</span></span>${md}<small style="display:block;opacity:.75;margin-top:4px">Coins are shared with Cheetah Chase and Rhino Rally. Wallet: ${load('cheetah-coins',0)}</small>`;
     $('og').textContent='Drift again';drawTrk();$('mis').hidden=false;$('trk').hidden=false;$('crr').hidden=false;$('ob').textContent='Best: '+Math.max(sc,best());$('ov').hidden=false;blip(520,1040,.25,'triangle',.08)}
-  const begin=cm=>{if(cm!==true)crRun=0;reset();if(crRun)s.t=crRun>20?60:crRun>10?75:90;s.mode='play';$('crr').hidden=true;$('ov').hidden=true;$('mis').hidden=true;$('trk').hidden=true;$('tc').hidden=!mobile;audio();if(ac&&ac.state==='suspended')ac.resume()};
+  const begin=cm=>{if(cm!==true)crRun=0;reset();if(crRun)s.t=crRun>20?60:crRun>10?75:90;s.mode='play';$('crr').hidden=true;$('ov').hidden=true;$('mis').hidden=true;$('trk').hidden=true;$('tc').hidden=!mobile;audio();if(ac&&ac.state==='suspended')ac.resume();music()};
   /* 3 daily missions picked by date (from 5); coins into the shared wallet; saved in tz-drift-missions */
   const DPOOL=[['pts','Score 600 drift pts in one session',600,60],['donut','Pull 2 donuts in one session',2,70],['one','Hold one drift worth 150+',150,60],['zone','Drift 8 s inside the green zone',8,70],['total','Score 2000 drift pts today',2000,80]];
   const dDay=(()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()})();
