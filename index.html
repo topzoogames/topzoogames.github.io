@@ -207,7 +207,7 @@ const GAMES=[
   how:'On a computer, drive with the arrow keys or WASD and hold Space for the handbrake to slide the back out. On a phone or tablet the car speeds up by itself: hold the arrow buttons to steer and hold DRIFT to slide. Long, wide slides build your combo up to x5; it banks when you grip again. Drift inside the green ring for double points, and slide all the way round a cone for a +150 donut. Walls and cones lose your combo. Each session lasts 90 seconds; career mode has 30 levels with 3 goals each.',
   about:'A 3D drift arena under neon city lights. Throw your Cheetah Chase car sideways, chain huge slides and pull donuts round the cones. Coins are shared with the other TopZoo racing games.'},
  {id:'zoo-blocks-3d',name:'Zoo Blocks 3D',cat:'puzzle',play:true,d3:true,c1:'#7ad35a',c2:'#1f4e79',
-  how:'Drag one of the three animal pieces onto the wooden crate (mouse or finger). Fill a whole row or a whole column to clear it. Clear more than one line at once, or clear lines on back-to-back moves, for big combo points. The game ends when none of your pieces fit. Want a challenge? Big blocks mode deals larger, chunkier pieces and keeps its own best score. The Weekly puzzle starts with the same half-filled crate for everyone all week, so you can compare scores with friends.',
+  how:'Drag one of the three animal pieces onto the wooden crate (mouse or finger). Fill a whole row or a whole column to clear it. Clear more than one line at once, or clear lines on back-to-back moves, for big combo points. The game ends when none of your pieces fit. Want a challenge? Big blocks mode deals larger, chunkier pieces and keeps its own best score. The Weekly puzzle starts with the same half-filled crate for everyone all week, so you can compare scores with friends. Three daily missions pay extra coins.',
   about:'A cosy 3D block puzzle in the zoo. Lions, pandas, frogs and friends stack up on a wooden crate; clear lines to send them hopping. Coins are shared with the other TopZoo games.'},
  {id:'banana-farm-tycoon',name:'Banana Farm Tycoon',cat:'sim',c1:'#ffd23f',c2:'#4f7a28'},
  {id:'penguin-slide',name:'Penguin Slide 3D',cat:'arcade',c1:'#7fd3ff',c2:'#14476b'},
@@ -696,7 +696,7 @@ window.__cheetahShot=()=>new Promise(res=>{const d=document.createElement('div')
 function zooblocks3d(root,opts={}){
   root.innerHTML=`<div class="g3d"><div class="hud"><div><b id="zs">0</b><small>score</small></div><div><b id="zb">0</b><small>best</small></div><div><b id="zc">x1</b><small>combo</small></div><div class="hbtns"><button class="mute" id="zmu" type="button"></button><button class="mute" id="zq" type="button"></button></div></div>
     <div class="pop" id="zp"></div>
-    <div class="ov show3d" id="zov" style="overflow-y:auto"><h2 id="zoh">Zoo Blocks 3D</h2><div class="ldbar" id="zlbw"><i id="zlb"></i></div><p id="zop">Loading the zoo…</p><button class="btn" id="zog" type="button" hidden>Play</button><div style="display:flex;flex-wrap:wrap;justify-content:center;max-width:360px"><button class="btn" id="zod" type="button" hidden style="display:inline-block;margin:6px 3px 0;padding:9px 14px;font-size:14px;background:#4cc3ff">Daily puzzle</button><button class="btn" id="zbg" type="button" hidden style="display:inline-block;margin:6px 3px 0;padding:9px 14px;font-size:14px;background:#ff7eb6">Big blocks (hard)</button><button class="btn" id="zwk" type="button" hidden style="display:inline-block;margin:6px 3px 0;padding:9px 14px;font-size:14px;background:#7bd389">Weekly puzzle</button></div><button class="btn" id="zsh" type="button" hidden style="margin-top:8px;padding:8px 14px;font-size:13px;background:#ffffff;color:#2b1a00">Share score</button><small id="zob"></small></div></div>`;
+    <div class="ov show3d" id="zov" style="overflow-y:auto"><h2 id="zoh">Zoo Blocks 3D</h2><div class="ldbar" id="zlbw"><i id="zlb"></i></div><p id="zop">Loading the zoo…</p><div class="mis" id="zmis" hidden style="margin:0 auto 8px;text-align:left"></div><button class="btn" id="zog" type="button" hidden>Play</button><div style="display:flex;flex-wrap:wrap;justify-content:center;max-width:360px"><button class="btn" id="zod" type="button" hidden style="display:inline-block;margin:6px 3px 0;padding:9px 14px;font-size:14px;background:#4cc3ff">Daily puzzle</button><button class="btn" id="zbg" type="button" hidden style="display:inline-block;margin:6px 3px 0;padding:9px 14px;font-size:14px;background:#ff7eb6">Big blocks (hard)</button><button class="btn" id="zwk" type="button" hidden style="display:inline-block;margin:6px 3px 0;padding:9px 14px;font-size:14px;background:#7bd389">Weekly puzzle</button></div><button class="btn" id="zsh" type="button" hidden style="margin-top:8px;padding:8px 14px;font-size:13px;background:#ffffff;color:#2b1a00">Share score</button><small id="zob"></small></div></div>`;
   const box=root.querySelector('.g3d'),$=id=>root.querySelector('#'+id);
   let alive=true,raf=0;const cleanups=[];
   const lb=v=>{const b=$('zlb');if(b)b.style.width=v+'%';if(v>=100)setTimeout(()=>{const w=$('zlbw');w&&w.classList.add('done')},400)};
@@ -791,14 +791,14 @@ function zooblocks3d(root,opts={}){
   const fits=(p,r0,c0)=>p.sh.every(([r,c])=>{const R=r0+r,C=c0+c;return R>=0&&C>=0&&R<N&&C<N&&!grid[R][C]});
   const canAny=p=>{for(let r=0;r<N;r++)for(let c=0;c<N;c++)if(fits(p,r,c))return true;return false};
   function reset(){if(meshGrid)meshGrid.flat().forEach(m=>m&&scene.remove(m));if(tray)tray.forEach(p=>scene.remove(p.g));
-    grid=[...Array(N)].map(()=>Array(N).fill(0));meshGrid=[...Array(N)].map(()=>Array(N).fill(null));score=0;combo=0;deal();hud()}
+    grid=[...Array(N)].map(()=>Array(N).fill(0));meshGrid=[...Array(N)].map(()=>Array(N).fill(null));score=0;combo=0;gm={pcs:0,lines:0,maxc:0};deal();hud()}
   function place(p,r0,c0){if(!fits(p,r0,c0))return false;
     for(const [r,c] of p.sh){const R=r0+r,C=c0+c,b=block(p.ai);b.position.set(C-3.5,.33,R-3.5);scene.add(b);grid[R][C]=p.ai+1;meshGrid[R][C]=b;
       b.position.y=1.2;anims.push({t:0,d:.18,f:k=>{b.position.y=1.2-.87*k}})}
-    scene.remove(p.g);p.used=true;score+=p.sh.length;blip(380,240,.12,'square',.05);
+    scene.remove(p.g);p.used=true;score+=p.sh.length;gm.pcs++;blip(380,240,.12,'square',.05);
     const rows=[],cols=[];for(let i=0;i<N;i++){if(grid[i].every(v=>v))rows.push(i);if(grid.every(row=>row[i]))cols.push(i)}
     const lines=rows.length+cols.length;
-    if(lines){combo++;const gain=lines*N*10*(lines>1?lines:1)*combo;score+=gain;
+    if(lines){combo++;gm.lines+=lines;gm.maxc=Math.max(gm.maxc,combo,lines);const gain=lines*N*10*(lines>1?lines:1)*combo;score+=gain;
       const clr=new Set();rows.forEach(r=>{for(let c=0;c<N;c++)clr.add(r*N+c)});cols.forEach(c=>{for(let r=0;r<N;r++)clr.add(r*N+c)});
       let k=0;const cnt={};for(const id of clr){const r=Math.floor(id/N),c=id%N,m=meshGrid[r][c];cnt[grid[r][c]]=(cnt[grid[r][c]]||0)+1;grid[r][c]=0;meshGrid[r][c]=null;
         if(m){const dl=k++*.012;const hx=(c-3.5)*.35+(Math.random()-.5)*1.5,hz=(r-3.5)*.35+(Math.random()-.5)*1.5,x0=m.position.x,z0=m.position.z;anims.push({t:-dl,d:.7,f:q=>{m.position.set(x0+hx*q,.33+Math.abs(Math.sin(q*Math.PI*2))*(1.4-q),z0+hz*q);m.scale.setScalar(Math.max(.01,q<.6?1:1-(q-.6)/.4));m.rotation.y=q*6.3;if(q>=1)scene.remove(m)}})}}
@@ -812,8 +812,18 @@ function zooblocks3d(root,opts={}){
   function over(){if(mode!=='play')return;mode='over';const nb=score>best;if(nb){best=score;save(bkey(),best)}
     let dl='';if(weekly){const k='zoo-blocks-weekly',d=load(k,{});const prev=d.wk===wkKey?d.best:0;if(score>prev)save(k,{wk:wkKey,best:score});dl=`<br>Weekly puzzle ${wkKey}: <b>${Math.max(prev,score)}</b>${score>prev&&prev?' (new weekly best)':''}`}if(daily){const k='zoo-blocks-daily',d=load(k,{});const prev=d.day===today?d.best:0;if(score>prev)save(k,{day:today,best:score});dl=`<br>Daily puzzle ${today}: <b>${Math.max(prev,score)}</b>${score>prev&&prev?' (new daily best)':''}`}
     const coins=Math.floor(score/50);if(coins>0)save('cheetah-coins',load('cheetah-coins',0)+coins);
-    $('zoh').textContent=(nb?'New best!':'No more room!')+(big?' (Big blocks)':weekly?' (Weekly)':'');$('zop').innerHTML=`Score <b>${score}</b> · Best <b>${best}</b>${coins?` · +${coins} coins`:''}${dl}<br><small>Coins also work in the racing games.</small>`;$('zod').hidden=false;$('zbg').hidden=false;$('zwk').hidden=false;
+    $('zoh').textContent=(nb?'New best!':'No more room!')+(big?' (Big blocks)':weekly?' (Weekly)':'');$('zop').innerHTML=`Score <b>${score}</b> · Best <b>${best}</b>${coins?` · +${coins} coins`:''}${dl}${zMissDone()}<br><small>Coins also work in the racing games.</small>`;$('zmis').hidden=true;$('zod').hidden=false;$('zbg').hidden=false;$('zwk').hidden=false;
     $('zsh').hidden=false;$('zsh').textContent='Share score';lastShare={score,mode:weekly?' weekly puzzle '+wkKey:daily?' daily puzzle '+today:big?' (big blocks)':''};$('zog').textContent='Play again';$('zog').hidden=false;$('zov').hidden=false;blip(400,120,.5,'sine',.08)}
+  let gm={pcs:0,lines:0,maxc:0};
+  /* 3 daily missions picked by date (from 6); coins into the shared wallet; saved in tz-zoo-blocks-missions */
+  const ZPOOL=[['score','Score 400 in one game',400,60],['lines','Clear 12 lines today',12,70],['combo','Get a x3 combo',3,60],['pcs','Place 30 pieces in one game',30,50],['daily','Finish the daily puzzle',1,50],['week','Finish the weekly puzzle',1,50]];
+  const zDay=(()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()})();
+  let zms=load('zoo-blocks-missions',null);if(!zms||zms.day!==zDay){let h=7;for(const ch of zDay)h=(h*31+ch.charCodeAt(0))>>>0;const ids=ZPOOL.map(m=>m[0]),pick=[];while(pick.length<3){pick.push(ids.splice(h%ids.length,1)[0]);h=Math.floor(h/7)+17}zms={day:zDay,ids:pick,prog:{},done:[]};save('zoo-blocks-missions',zms)}
+  const drawZMis=()=>{const el=$('zmis');if(!el)return;el.innerHTML='<b>Daily missions</b>'+zms.ids.map(id=>{const m=ZPOOL.find(x=>x[0]===id),dn=zms.done.includes(id),pv=Math.min(m[2],Math.floor(zms.prog[id]||0));return `<span class="${dn?'ok':''}">${dn?'✔':'○'} ${m[1]} <i>${dn?'done':pv+'/'+m[2]}</i> <em>+${m[3]}</em></span>`}).join('')};
+  const zMissDone=()=>{const run={score,combo:gm.maxc,pcs:gm.pcs,daily:daily?1:0,week:weekly?1:0};let out='',bonus=0;
+    zms.ids.forEach(id=>{if(zms.done.includes(id))return;const m=ZPOOL.find(x=>x[0]===id);if(id==='lines')zms.prog.lines=(zms.prog.lines||0)+gm.lines;else zms.prog[id]=Math.max(zms.prog[id]||0,run[id]);
+      if((zms.prog[id]||0)>=m[2]){zms.done.push(id);bonus+=m[3];out+=`<span class="mdone">Mission done: ${m[1]} +${m[3]} coins</span>`}});
+    if(bonus)save('cheetah-coins',load('cheetah-coins',0)+bonus);save('zoo-blocks-missions',zms);drawZMis();return out};
   let daily=false,weekly=false;const today=new Date().toISOString().slice(0,10);
   const bkey=()=>big?'zoo-blocks-best-big':weekly?'zoo-blocks-best-week':'zoo-blocks-best';
   /* weekly puzzle: same pre-filled crate + same pieces for everyone this ISO week */
@@ -822,7 +832,7 @@ function zooblocks3d(root,opts={}){
     if(grid[r][c]||grid[r].filter(v=>v).length>=5||grid.filter(row=>row[c]).length>=5)continue;
     for(const C of [c,N-1-c]){const b=block(ai);b.position.set(C-3.5,.33,r-3.5);scene.add(b);grid[r][C]=ai+1;meshGrid[r][C]=b}put+=2}}
   const seeded=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
-  function begin(d){daily=d===true;big=d==='big';weekly=d==='week';best=load(bkey(),0);$('zbg').hidden=true;$('zwk').hidden=true;$('zsh').hidden=true;rng=daily?seeded(Number(today.replace(/-/g,''))):weekly?seeded(Number(wkKey.replace(/\D/g,''))*7+13):Math.random;reset();if(weekly)prefill();mode='play';$('zod').hidden=true;$('zov').hidden=true;if(ac&&ac.state==='suspended')ac.resume()}
+  function begin(d){daily=d===true;big=d==='big';weekly=d==='week';best=load(bkey(),0);$('zbg').hidden=true;$('zwk').hidden=true;$('zsh').hidden=true;$('zmis').hidden=true;rng=daily?seeded(Number(today.replace(/-/g,''))):weekly?seeded(Number(wkKey.replace(/\D/g,''))*7+13):Math.random;reset();if(weekly)prefill();mode='play';$('zod').hidden=true;$('zov').hidden=true;if(ac&&ac.state==='suspended')ac.resume()}
   /* input: drag a tray piece onto the board */
   const ray=new T.Raycaster(),plane=new T.Plane(new T.Vector3(0,1,0),-.33),hit=new T.Vector3(),ndc=new T.Vector2();
   const ghostM=[new T.MeshBasicMaterial({color:'#4cff7a',transparent:true,opacity:.45}),new T.MeshBasicMaterial({color:'#ff4c4c',transparent:true,opacity:.35})],ghost=[];
@@ -857,7 +867,7 @@ function zooblocks3d(root,opts={}){
     if(tray)tray.forEach((p,i)=>{if(!p.used&&(!drag||drag.p!==p))p.g.position.y=.1+Math.sin(tt*2+i)*.06})}
   const render=()=>renderer.render(scene,cam);
   reset();mode='ready';lb(100);$('zop').textContent=mobile?'Drag the animal blocks onto the crate. Fill a whole row or column to clear it. Clear several at once for big combos!':'Drag the animal blocks onto the crate with your mouse. Fill a whole row or column to clear it. Clear several at once for big combos!';
-  $('zob').textContent=best?'Best: '+best:'';$('zog').hidden=false;$('zod').hidden=false;$('zbg').hidden=false;$('zwk').hidden=false;
+  $('zob').textContent=best?'Best: '+best:'';drawZMis();$('zmis').hidden=false;$('zog').hidden=false;$('zod').hidden=false;$('zbg').hidden=false;$('zwk').hidden=false;
   if(opts.test){opts.test({state:()=>({grid,score,combo,mode,tray}),place:(i,r,c)=>place(tray[i],r,c),fits:(i,r,c)=>fits(tray[i],r,c),begin,step,render,cv,seed:f=>{rng=f}});return}
   const loop=now=>{if(!alive)return;raf=requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render()};raf=requestAnimationFrame(loop);
   }
