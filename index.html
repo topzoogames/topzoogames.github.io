@@ -203,7 +203,7 @@ const GAMES=[
  {id:'rhino-rally',name:'Rhino Rally',cat:'driving',play:true,d3:true,c1:'#f1b783',c2:'#8a4b22',
   how:'On a computer, use the left and right arrow keys to change lanes and press Up or Space to jump. On a phone or tablet, swipe left or right to change lanes and swipe up to jump. Logs can be jumped; crates and zebra cars cannot. Grab bananas for 25 bonus points each. Career mode has 30 levels with 3 goals each: earn stars to open the next level and win coins.',
   about:'A 3D savanna road race at sunset. Dodge, jump and drive as far as your rhino can go.'},
- {id:'cheetah-drift',name:'Cheetah Drift Arena',cat:'driving',c1:'#ff9f1c',c2:'#3a1c71',
+ {id:'cheetah-drift',name:'Cheetah Drift Arena',cat:'driving',play:true,d3:true,c1:'#ff9f1c',c2:'#3a1c71',
   how:'On a computer, drive with the arrow keys or WASD and hold Space for the handbrake to slide the back out. On a phone or tablet the car speeds up by itself: hold the arrow buttons to steer and hold DRIFT to slide. Long, wide slides build your combo up to x5; it banks when you grip again. Drift inside the green ring for double points, and slide all the way round a cone for a +150 donut. Walls and cones lose your combo. Each session lasts 90 seconds; career mode has 30 levels with 3 goals each.',
   about:'A 3D drift arena under neon city lights. Throw your Cheetah Chase car sideways, chain huge slides and pull donuts round the cones. Coins are shared with the other TopZoo racing games.'},
  {id:'zoo-blocks-3d',name:'Zoo Blocks 3D',cat:'puzzle',c1:'#7ad35a',c2:'#1f4e79'},
@@ -876,7 +876,7 @@ function drift3d(root,opts={}){
   const crSt=n=>{const m=cr[n]||0;return(m&1)+(m>>1&1)+(m>>2&1)},crOpen=n=>n===1||crSt(n-1)>0;
   const drawCR=()=>{const el=$('crr');if(!el||opts.test)return;let tot=0;for(let i=1;i<=CRN;i++)tot+=crSt(i);const m=cr[crL]||0;
     el.innerHTML=`<b>Career · ${tot}/${CRN*3} ★</b><span style="display:flex;align-items:center;gap:8px;justify-content:center"><button type="button" class="btn" data-d="-1" style="padding:2px 10px">‹</button>Level ${crL} ${'★'.repeat(crSt(crL))}${'☆'.repeat(3-crSt(crL))}<button type="button" class="btn" data-d="1" style="padding:2px 10px">›</button></span>`+
-      (crOpen(crL)?crG(crL).map(([k,v,t],i)=>`<span class="${m>>i&1?'ok':''}">${m>>i&1?'✔':'○'} ${k==='one'?'One drift worth '+v+'+':'Get '+v+t}</span>`).join('')+`<button type="button" class="btn" data-a="go" style="margin-top:4px;padding:8px 14px;font-size:14px">Play level ${crL}${crL>20?' (60 s)':crL>10?' (75 s)':''}</button>`:`<span>\u{1F512} Get 1 star on level ${crL-1} to open</span>`);
+      (crOpen(crL)?crG(crL).map(([k,v,t],i)=>`<span class="${m>>i&1?'ok':''}">${m>>i&1?'✔':'○'} ${k==='one'?'One drift worth '+v+'+':'Get '+v+(k==='donut'&&v===1?t.replace('donuts','donut'):t)}</span>`).join('')+`<button type="button" class="btn" data-a="go" style="margin-top:4px;padding:8px 14px;font-size:14px">Play level ${crL}${crL>20?' (60 s)':crL>10?' (75 s)':''}</button>`:`<span>\u{1F512} Get 1 star on level ${crL-1} to open</span>`);
     el.querySelectorAll('button').forEach(bt=>bt.onclick=()=>{if(bt.dataset.a==='go'){crRun=crL;begin(true);return}crL=Math.max(1,Math.min(CRN,crL+Number(bt.dataset.d)));save('drift-career-sel',crL);drawCR()})};
   const crEnd=()=>{if(!crRun)return'';const n=crRun,old=cr[n]||0,run={pts:s.pts,donut:s.donuts||0,one:s.best};let m=old;crG(n).forEach(([k,v],i)=>{if(run[k]>=v)m|=1<<i});crRun=0;
     if(m===old)return `<span class="mdone">Career level ${n}: no new stars this time</span>`;cr[n]=m;save('drift-career',cr);const ns=crSt(n)-((old&1)+(old>>1&1)+(old>>2&1)),pay=30*n*ns;save('cheetah-coins',load('cheetah-coins',0)+pay);
@@ -1352,6 +1352,7 @@ const GAMEFN={
 /* Rhino Rally: 3D road racer */
 'rhino-rally':root=>rhino3d(root),
 'cheetah-chase':root=>cheetah3d(root),
+'cheetah-drift':root=>drift3d(root),
 
 /* Panda Pairs: memory card matching */
 'panda-pairs':root=>canvasGame(root,ctx=>{
