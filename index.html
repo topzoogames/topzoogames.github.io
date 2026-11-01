@@ -302,7 +302,7 @@ const GAMES=[
   about:'A 3D night-city highway race. Weave through traffic, drift, and burn nitro in the fastest cheetah-spotted car in the zoo.'},
 ];
 /* user 2026-11-01: show ONLY Zoo Kart for now; other games stay in the code (add ids to SHOW to bring them back) */
-const SHOW=['zoo-kart'];
+const SHOW=['zoo-kart','cheetah-chase','cheetah-drift','rhino-rally'];
 const ALL_GAMES=GAMES.slice();GAMES.splice(0,GAMES.length,...ALL_GAMES.filter(g=>SHOW.includes(g.id)));
 const byId=Object.fromEntries(GAMES.map(g=>[g.id,g]));
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
