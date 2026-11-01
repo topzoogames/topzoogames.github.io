@@ -742,8 +742,15 @@ function monkeyswing3d(root,opts={}){
   const noise=(d,v=.2,f=900)=>{const a=au();if(!a)return;const n=a.sampleRate*d,b=a.createBuffer(1,n,a.sampleRate),c=b.getChannelData(0);for(let i=0;i<n;i++)c[i]=(Math.random()*2-1)*(1-i/n);const s=a.createBufferSource(),fl=a.createBiquadFilter(),g=a.createGain();fl.type='lowpass';fl.frequency.value=f;g.gain.value=v;s.buffer=b;s.connect(fl).connect(g).connect(a.destination);s.start()};
   const SFX={grab:()=>tone(520,.09,'triangle',.12,260),fly:()=>noise(.25,.12,1600),nana:()=>{tone(880,.08,'square',.06);setTimeout(()=>tone(1320,.1,'square',.05),60)},
     splash:()=>{noise(.6,.35,700);tone(300,.5,'sine',.15,-220)},oof:()=>tone(220,.35,'sawtooth',.08,-120),win:()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,.18,'triangle',.12),i*110)),hoo:()=>{tone(420,.12,'sine',.14,300);setTimeout(()=>tone(500,.16,'sine',.12,380),130)}};
+  let musT=0,musStep=0,musNext=0;const MCH=[[60,64,67],[57,60,64],[65,69,72],[67,71,74]],mf=m=>440*Math.pow(2,(m-69)/12);
+  function music(on){clearInterval(musT);musT=0;if(!on||muted)return;const a=au();if(!a)return;musNext=a.currentTime+.05;
+    musT=setInterval(()=>{if(!ac)return;while(musNext<ac.currentTime+.2){const ch=MCH[(musStep>>3)&3],t=musNext;
+      const pl=(f,d,v,type)=>{const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+.01);g.gain.exponentialRampToValueAtTime(.0008,t+d);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+d+.02)};
+      pl(mf(ch[musStep%3]+12),.22,.035,'triangle');if(musStep%2===0)pl(mf(ch[0]-12),.35,.05,'sine');
+      musStep++;musNext+=.25}},90)}
+  cleanups.push(()=>clearInterval(musT));
   const setMute=()=>{$('mmu').textContent=muted?'🔇':'🔊'};setMute();
-  $('mmu').onclick=e=>{e.stopPropagation();muted=!muted;save('monkey-mute',muted);setMute()};
+  $('mmu').onclick=e=>{e.stopPropagation();muted=!muted;save('monkey-mute',muted);setMute();music(!muted&&s&&s.mode!=='ready')};
   /* monkey: real model if it loads, code-made one until then */
   const mk=new T.Group(),body=new T.Group();mk.add(body);scene.add(mk);
   {const fur=M('#8b5a2b',.8),face=M('#f2c48d',.8),eye=new T.MeshStandardMaterial({color:'#111'});
@@ -772,8 +779,8 @@ function monkeyswing3d(root,opts={}){
   function rng(seed){let s=seed*9301+49297;return()=>((s=(s*9301+49297)%233280)/233280)}
   function makeLevel(n){while(lvl.children.length){const o=lvl.children.pop();o.traverse&&o.traverse(q=>{q.geometry&&q.geometry!==nanaG&&q.geometry.dispose()})}
     const r=rng(n*17+3),hooks=[],nanas=[],thorns=[],shrooms=[];let x=6;const cnt=4+Math.floor(n*.45);
-    for(let i=0;i<cnt;i++){const y=6.5+r()*2.2-(n>12?r()*1.2:0);hooks.push({x,y});
-      const vine=new T.Mesh(new T.CylinderGeometry(.08,.08,14,5),vineM);vine.position.set(x,y+7,0);lvl.add(vine);
+    for(let i=0;i<cnt;i++){const y=6.5+r()*2.2-(n>12?r()*1.2:0),mv=(n>=11&&i>0&&r()<Math.min(.25+(n-11)*.03,.6))?1+r()*.6:0;hooks.push({x,y,base:x,mv,ph:r()*6});
+      const vine=new T.Mesh(new T.CylinderGeometry(.08,.08,14,5),vineM);vine.position.set(x,y+7,0);lvl.add(vine);hooks[i].vine=vine;
       const ring=new T.Mesh(new T.TorusGeometry(.38,.09,8,16),ringM);ring.position.set(x,y,0);lvl.add(ring);hooks[i].ring=ring;
       const AR=n<4?[-.5,.5]:[-.6,0,.6];for(let k=0;k<AR.length;k++){const nx=x+Math.sin(AR[k])*4.8,ny=y-Math.cos(AR[k])*4.8;const b=new T.Mesh(nanaG,nanaM);b.position.set(nx,ny,0);b.rotation.z=.6;lvl.add(b);nanas.push({x:nx,y:ny,m:b,got:false})}
       if(n>=5&&i>0&&i<cnt-1&&r()<Math.min(.25+n*.02,.6)){const ty=y-5.6-r()*.8,tx=x+2.7;const g=new T.Group();const c=new T.Mesh(new T.IcosahedronGeometry(.7,0),thornM);g.add(c);
@@ -798,7 +805,7 @@ function monkeyswing3d(root,opts={}){
   const hud=()=>{$('mb').textContent=s.got+'/'+L.nanas.length};
   let popT=0;function pop(t,ms=900){const p=$('mp');p.textContent=t;p.classList.add('show');clearTimeout(popT);popT=setTimeout(()=>p.classList.remove('show'),ms)}
   let held=false;
-  function press(){if(!s)return;if(s.mode==='ready'){s.mode='play';s.vx=7.5;s.vy=9;SFX.hoo();return}if(s.mode==='play'){held=true;grab()}}
+  function press(){if(!s)return;if(s.mode==='ready'){s.mode='play';s.vx=7.5;s.vy=9;SFX.hoo();if(!musT)music(true);return}if(s.mode==='play'){held=true;grab()}}
   function release(){held=false;if(s&&s.mode==='play'&&s.hook>=0){s.hook=-1;SFX.fly();const sp=Math.hypot(s.vx,s.vy);if(sp>4){s.vx*=1.06;s.vy*=1.06}}}
   function grab(){if(s.hook>=0)return;let best=-1,bd=1e9;L.hooks.forEach((h,i)=>{const dx=h.x-s.x,dy=h.y-s.y,d=Math.hypot(dx,dy);if(dx>-1&&d<10&&dy>-1&&d<bd){bd=d;best=i}});
     if(best>=0){s.hook=best;s.len=Math.max(2.2,bd);SFX.grab();const r=L.hooks[best].ring;r.scale.setScalar(1.5)}}
@@ -834,7 +841,7 @@ function monkeyswing3d(root,opts={}){
   function step(dt){if(!s)return;
     for(const d of drops){d.userData.v.y-=20*dt;d.position.addScaledVector(d.userData.v,dt);if(d.position.y<-4.5){scene.remove(d);d.userData.dead=true}}
     for(let i=drops.length-1;i>=0;i--)if(drops[i].userData.dead)drops.splice(i,1);
-    L.hooks.forEach(h=>h.ring.scale.lerp(new T.Vector3(1,1,1),.15));L.shrooms&&L.shrooms.forEach(m=>{m.sq*=.85;m.m.scale.set(1+m.sq*.3,1-m.sq*.4,1+m.sq*.3)});L.nanas.forEach(b=>{if(!b.got)b.m.rotation.y+=dt*3;else{b.m.position.y+=dt*6;b.m.scale.multiplyScalar(.9)}});
+    const tn=performance.now()/1000;L.hooks.forEach(h=>{if(h.mv){h.x=h.base+Math.sin(tn*1.3+h.ph)*h.mv;h.ring.position.x=h.x;h.vine.position.x=h.x;h.vine.rotation.z=-Math.sin(tn*1.3+h.ph)*h.mv*.07}});L.hooks.forEach(h=>h.ring.scale.lerp(new T.Vector3(1,1,1),.15));L.shrooms&&L.shrooms.forEach(m=>{m.sq*=.85;m.m.scale.set(1+m.sq*.3,1-m.sq*.4,1+m.sq*.3)});L.nanas.forEach(b=>{if(!b.got)b.m.rotation.y+=dt*3;else{b.m.position.y+=dt*6;b.m.scale.multiplyScalar(.9)}});
     if(s.mode==='ready'){s.t=0;mk.position.set(s.x,s.y+Math.abs(Math.sin(performance.now()/300))*.15,0);return}
     if(s.mode==='over')return;
     const sd=dt*s.slow;if(s.mode==='dying'||s.mode==='won'){s.deadT+=dt;if(s.mode==='won'){s.vx*=.92;s.vy-=G*sd;s.x+=s.vx*sd;s.y=Math.max(.95,s.y+s.vy*sd);if(s.y<=.95)s.vy=0}
