@@ -911,12 +911,25 @@ function zookart3d(root,opts={}){
     for(let k=0;k<3;k++){const c=new T.Mesh(new T.IcosahedronGeometry((k?1.3:1.9)*s,1),m);c.position.set(k?(k*2-3)*1.1*s:0,(k?3.6:4.4)*s,k?(rnd()-.5)*s:0);c.castShadow=true;g.add(c)}g.position.set(x,0,z);deco.add(g)}
   for(let n=0,tries=0;n<150&&tries<2600;tries++){const x=(rnd()-.5)*560+25,z=(rnd()-.5)*520+75;if(nearTrack(x,z,17))continue;n++;const r=rnd();
     if(r<.3)acacia(x,z,.8+rnd()*.7);else if(r<.58)roundTree(x,z,.8+rnd()*.6);else if(r<.7){const m=new T.Mesh(new T.DodecahedronGeometry(1+rnd()*2.2,0),rockM);m.position.set(x,.4,z);m.rotation.set(rnd()*3,rnd()*3,0);m.castShadow=true;deco.add(m)}
-    else if(r<.85){const m=new T.Mesh(new T.ConeGeometry(1.4+rnd(),4+rnd()*4,6),moundM);m.position.set(x,2,z);m.castShadow=true;deco.add(m)}
+    else if(r<.85){const g=new T.Group();for(let k=0;k<3;k++){const m=new T.Mesh(new T.IcosahedronGeometry((k?.9:1.3)*(1+rnd()*.4),1),k===1?roundM[(rnd()*roundM.length)|0]:bushM);m.scale.y=.75;m.position.set(k?(k*2-3)*.9:0,k?.55:.8,k?(rnd()-.5):0);m.castShadow=true;g.add(m)}g.position.set(x,0,z);deco.add(g)}
     else{const m=new T.Mesh(new T.IcosahedronGeometry(1.3+rnd(),0),bushM);m.scale.y=.7;m.position.set(x,.6,z);m.castShadow=true;deco.add(m)}}
   {const mc=['#f0b3c8','#e9a2bf','#f6c6d4','#e397b6'];for(let ring=0;ring<2;ring++){const NM=ring?22:28;for(let i=0;i<NM;i++){const a=(i+ring*.5)/NM*Math.PI*2,r=(ring?420:330)+rnd()*60,hh=(ring?50:26)+rnd()*(ring?50:30);const rr=(ring?75:55)+rnd()*40;const m=new T.Mesh(new T.IcosahedronGeometry(1,1),M(mc[(i+ring)&3],1));m.scale.set(rr*.8,hh*.75,rr*(.55+rnd()*.4));m.position.set(25+Math.cos(a)*r*1.1,-hh*.2,75+Math.sin(a)*r*1.1);m.rotation.y=rnd()*3;deco.add(m)}}}
   /* canyon rock walls on the outside of the back section */
   {const st=['#d9824a','#c96f3c','#e8a066','#b85f34'];for(let i=330;i<600;i+=9){const p=P[i],n=NR[i];for(const sd of[-1,1]){if((i/9|0)%2&&sd>0)continue;const d=HW+15+rnd()*6,x=p.x+n.x*sd*d,z=p.z+n.z*sd*d;if(nearTrack(x,z,HW+12))continue;
       let y=0;const lay=3+(rnd()*4|0);for(let k=0;k<lay;k++){const hgt=2.2+rnd()*2.2,w=7-k*.9+rnd()*2;const m=new T.Mesh(new T.CylinderGeometry(w*.8,w,hgt,7),M(st[(k+i)&3],.95));m.position.set(x+(rnd()-.5)*1.5,y+hgt/2,z+(rnd()-.5)*1.5);m.rotation.y=rnd()*3;m.castShadow=k<2;deco.add(m);y+=hgt*.92}}}}
+  /* TopZoo Games trackside banners: 3 per lap (start area, long straight, back section by the canyon) */
+  {const bt=ctex(1024,256,(x)=>{const g=x.createLinearGradient(0,0,1024,0);g.addColorStop(0,'#5a1fd1');g.addColorStop(1,'#2a0f7a');x.fillStyle=g;x.fillRect(0,0,1024,256);
+      x.strokeStyle='#33e6ff';x.lineWidth=14;x.strokeRect(10,10,1004,236);x.strokeStyle='rgba(51,230,255,.35)';x.lineWidth=4;x.strokeRect(26,26,972,204);
+      const px=150,py=132;x.fillStyle='#33e6ff';x.beginPath();x.ellipse(px,py+22,46,40,0,0,7);x.fill();
+      for(const[dx,dy,r]of[[-52,-28,18],[-20,-58,19],[20,-58,19],[52,-28,18]]){x.beginPath();x.ellipse(px+dx,py+dy,r,r*1.2,dx*.008,0,7);x.fill()}
+      x.font='900 118px Poppins,Nunito,Arial,sans-serif';x.textBaseline='middle';x.lineJoin='round';x.lineWidth=12;x.strokeStyle='#160640';x.strokeText('TOPZOO',236,96);x.fillStyle='#fff';x.fillText('TOPZOO',236,96);
+      x.font='900 84px Poppins,Nunito,Arial,sans-serif';x.lineWidth=10;x.strokeText('GAMES',240,192);x.fillStyle='#33e6ff';x.fillText('GAMES',240,192);
+      x.fillStyle='#ffd23f';x.font='900 40px Poppins,Arial,sans-serif';x.fillText('★',560,192)});bt.anisotropy=4;
+    const fm=new T.MeshStandardMaterial({map:bt,roughness:.45,emissive:'#ffffff',emissiveMap:bt,emissiveIntensity:.18}),edgeM=M('#1d0a55',.5),postM=M('#e8e8f0',.4);
+    const cx=25,cz=75;for(const i of[N-45,250,470]){const p=P[i],t=TG[i],n=NR[i];const sd=((p.x-cx)*n.x+(p.z-cz)*n.z)>0?1:-1,d=HW+11.5;
+      const g=new T.Group();const pan=new T.Mesh(new T.BoxGeometry(12,3,.35),[edgeM,edgeM,edgeM,edgeM,fm,fm]);pan.position.y=4.3;pan.castShadow=true;g.add(pan);
+      for(const k of[-1,1]){const po=new T.Mesh(new T.CylinderGeometry(.18,.22,4.4,8),postM);po.position.set(k*4.8,2.2,-.12);g.add(po)}
+      const yaw=Math.atan2(t.x,t.z);g.position.set(p.x+n.x*sd*d,0,p.z+n.z*sd*d);g.rotation.y=yaw+Math.atan2(-sd*.8,-.6);scene.add(g)}}
   /* grass tufts (instanced) */
   {const tg=new T.ConeGeometry(.22,1,4);tg.translate(0,.5,0);const cnt=mobile?700:2200;const im=new T.InstancedMesh(tg,new T.MeshStandardMaterial({color:'#ffffff',roughness:1,flatShading:true}),cnt*3);const o=new T.Object3D(),col=new T.Color();let n=0;
     const gc=['#5ea835','#79c243','#4c9a2e','#94cf50','#a8c84e'];for(let t=0;t<cnt*4&&n<cnt*3-3;t++){const i=(rnd()*N)|0,p=P[i],nr=NR[i],sd=rnd()<.5?-1:1,d=HW+6.5+rnd()*rnd()*60,x=p.x+nr.x*sd*d+(rnd()-.5)*4,z=p.z+nr.z*sd*d+(rnd()-.5)*4;if(nearTrack(x,z,HW+6))continue;
@@ -1139,8 +1152,8 @@ function zookart3d(root,opts={}){
       if(k.drv){k.drv.position.y=seat.y+ANIM[k.d.a].y+Math.abs(Math.sin(tm*9+k.k))*Math.min(1,k.v/20)*.06;k.drv.rotation.z=k.yawV*.12;k.drv.rotation.x=-(k.boost>0?.12:0)}
       if(k.fl){k.fl.visible=k.boost>0;if(k.fl.visible){const f=(.8+Math.random()*.5)*Math.min(1.6,.6+k.boost);for(const c of k.fl.children)c.scale.z=(c.material===flameIn?.6:1)*f*1.4}}
       for(const w of k.wheels)w.rotation.x+=k.v*.016/.33;for(const w of k.fw)w.rotation.y=-(k.yawV*.25)}
-    if(s.mode==='menu'){P1.g.rotation.y=P1.h+s.t*.6;cam.setViewOffset(W,H,W>H*1.2?-W*.34:0,W>H*1.2?-H*.16:-H*.3,W,H)}else if(cam.view&&cam.view.enabled)cam.clearViewOffset();
-    if(s.mode==='menu'||s.mode==='over'){const a=s.t*.25,r=7.5;cam.fov+=(48-cam.fov)*.1;cam.position.set(P1.x+Math.sin(P1.h+a+2.4)*r,2.6,P1.z+Math.cos(P1.h+a+2.4)*r);cam.lookAt(P1.x,.9,P1.z)}
+    if(s.mode==='menu'){P1.g.rotation.y=P1.h+s.t*.25+2.4+.55+Math.sin(s.t*.7)*.4;cam.setViewOffset(W,H,W>H*1.2?-W*.34:0,W>H*1.2?-H*.16:-H*.3,W,H)}else if(cam.view&&cam.view.enabled)cam.clearViewOffset();
+    if(s.mode==='menu'||s.mode==='over'){const mn=s.mode==='menu',a=s.t*.25,r=mn?5.8:7.5;cam.fov+=(48-cam.fov)*.1;cam.position.set(P1.x+Math.sin(P1.h+a+2.4)*r,mn?2.1:2.6,P1.z+Math.cos(P1.h+a+2.4)*r);cam.lookAt(P1.x,mn?1.1:.9,P1.z)}
     else{let d=P1.h-s.camH;d=Math.atan2(Math.sin(d),Math.cos(d));s.camH+=d*.12;const portrait=H>W,D=portrait?8.8:7.2,Hh=portrait?4.8:4.1;
       s.camY=(s.camY||0)+(P1.g.position.y-(s.camY||0))*.15;cam.position.set(P1.x-Math.sin(s.camH)*D,Hh+s.camY*.75,P1.z-Math.cos(s.camH)*D);
       if(s.mode==='count'&&s.cd>3.6){const u=Math.min(1,(5.4-s.cd)/1.8),e=u*u*(3-2*u),fx=Math.sin(P1.h),fz=Math.cos(P1.h),sx=P1.x+fx*26+fz*9,sz=P1.z+fz*26-fx*9;
@@ -1154,7 +1167,7 @@ function zookart3d(root,opts={}){
   let last=performance.now();
   function loop(now){if(!alive)return;raf=requestAnimationFrame(loop);const dt=Math.min(.033,(now-last)/1000);last=now;step(dt);render()}
   menu();lb(70);
-  if(/zkdebug/.test(location.search))window.__zk={s:()=>s,karts,P,NR,TG,K,N,lat:()=>lat(P1)};
+  if(/zkdebug/.test(location.search))window.__zk={s:()=>s,karts,P,NR,TG,K,N,lat:()=>lat(P1),shot:(x,y,z,lx,ly,lz,fov=55)=>{const c=new T.PerspectiveCamera(fov,cam.aspect,.1,900);c.position.set(x,y,z);c.lookAt(lx,ly,lz);renderer.render(scene,c);return renderer.domElement.toDataURL('image/jpeg',.8)}};
   if(opts.test){opts.test({s:()=>s,karts,P1,inp,begin,menu,step,render,cv,N,P,K,lat:()=>lat(P1),results})}
   else raf=requestAnimationFrame(loop);
   }
