@@ -888,6 +888,12 @@ function zookart3d(root,opts={}){
   padT.repeat.set(1,2);const padM=new T.MeshStandardMaterial({map:padT,emissive:'#ff7a00',emissiveMap:padT,emissiveIntensity:.55,roughness:.5});
   const PADS=[[120,-3.5],[300,3.5],[470,0],[640,-3],[790,3]].map(([i,l])=>{const p=P[i],n=NR[i],t=TG[i];const m=new T.Mesh(new T.PlaneGeometry(4,6),padM);m.rotation.set(-Math.PI/2,0,Math.PI);
     const g=new T.Group();g.add(m);g.position.set(p.x+n.x*l,.06,p.z+n.z*l);g.rotation.y=Math.atan2(t.x,t.z);scene.add(g);return{i,l}});
+  /* jump ramp (full width) on the straightest stretch away from pads and the start */
+  const RAMP=(()=>{let bi=0,bk=1e9;for(let i=160;i<N-120;i+=5){if(PADS.some(pd=>Math.abs(pd.i-i)<45))continue;let m=0;for(let o=-30;o<40;o+=3)m=Math.max(m,K[(i+o+N)%N]);if(m<bk){bk=m;bi=i}}
+    const p=P[bi],t=TG[bi],L=4.5,H=.9,yaw=Math.atan2(t.x,t.z);const rt=ctex(64,64,x=>{x.fillStyle='#ffb21f';x.fillRect(0,0,64,64);x.fillStyle='#3a1a00';for(let k=-64;k<128;k+=24){x.beginPath();x.moveTo(k,0);x.lineTo(k+12,0);x.lineTo(k+12+64,64);x.lineTo(k+64,64);x.closePath();x.fill()}});rt.wrapS=rt.wrapT=T.RepeatWrapping;rt.repeat.set(5,1);
+    const g=new T.Group();const top=new T.Mesh(new T.BoxGeometry(HW*2,.22,Math.hypot(L,H)),new T.MeshStandardMaterial({map:rt,roughness:.6}));top.rotation.x=-Math.atan2(H,L);top.position.set(0,H/2,-L/2);top.castShadow=top.receiveShadow=true;g.add(top);
+    for(const sd of[-1,1]){const w=new T.Mesh(new T.BoxGeometry(.3,H,.3),M('#5a2400'));w.position.set(sd*(HW-.2),H/2,-.15);g.add(w)}
+    g.position.set(p.x,0,p.z);g.rotation.y=yaw;scene.add(g);return{i:bi,x:p.x,z:p.z,tx:t.x/Math.hypot(t.x,t.z),tz:t.z/Math.hypot(t.x,t.z),L,H}})();
   /* scenery */
   const nearTrack=(x,z,r)=>{for(let i=0;i<N;i+=3){const dx=x-P[i].x,dz=z-P[i].z;if(dx*dx+dz*dz<r*r)return true}return false};
   let seed=11;const rnd=()=>((seed=(seed*9301+49297)%233280)/233280);
@@ -968,7 +974,7 @@ function zookart3d(root,opts={}){
   let s=null;const inp={L:0,R:0,B:0,D:0};
   function nearest(k,full){let bi=k.i,bd=1e18;const a=full?0:-15,b=full?N:35;for(let o=a;o<b;o++){const j=((full?o:k.i+o)%N+N)%N;const dx=k.x-P[j].x,dz=k.z-P[j].z,d=dx*dx+dz*dz;if(d<bd){bd=d;bi=j}}return bi}
   const lat=k=>{const p=P[k.i],n=NR[k.i];return (k.x-p.x)*n.x+(k.z-p.z)*n.z};
-  function place(){karts.forEach((k,idx)=>{const slot=5-idx;/* player starts at the back */const row=slot>>1,side=slot%2?1:-1;const i=(N-6-row*8)%N;const p=P[i],n=NR[i],t=TG[i];
+  function place(){karts.forEach((k,idx)=>{k.air=0;const slot=5-idx;/* player starts at the back */const row=slot>>1,side=slot%2?1:-1;const i=(N-6-row*8)%N;const p=P[i],n=NR[i],t=TG[i];
     k.x=p.x+n.x*side*3.6;k.z=p.z+n.z*side*3.6;k.h=Math.atan2(t.x,t.z);k.v=0;k.i=i;k.lap=0;k.drift=0;k.dd=0;k.ch=0;k.boost=0;k.hop=0;k.fin=0;k.finT=0;k.lapT=[];k.lapStart=0;k.bump=0;k.off=side*3.6;k.yawV=0;k.cool=0;k.prevPos=6;
     k.g.position.set(k.x,0,k.z);k.g.rotation.y=k.h})}
   const ord=n=>n+(n===1?'st':n===2?'nd':n===3?'rd':'th');
@@ -1011,7 +1017,9 @@ function zookart3d(root,opts={}){
     if(k.boost>0){k.boost-=dt;if(Math.random()<.8)emit(k.x-Math.sin(k.h)*1.5,.5,k.z-Math.cos(k.h)*1.5,(Math.random()-.5)*2,1,(Math.random()-.5)*2,Math.random()<.5?'#ffcf3a':'#ff6a1a',.3)}
     if(offroad&&k.v>8&&Math.random()<.5)emit(k.x-Math.sin(k.h)*1.2,.3,k.z-Math.cos(k.h)*1.2,(Math.random()-.5)*2,1.5,(Math.random()-.5)*2,'#e8c27a',.6);
     /* track index, laps, walls, pads */
-    const pi=k.i;k.i=nearest(k);if(pi>N-90&&k.i<90){k.lap++;onLap(k)}else if(pi<90&&k.i>N-90)k.lap--;
+    const pi=k.i;k.i=nearest(k);
+    if(!k.air&&pi<RAMP.i&&k.i>=RAMP.i&&k.i-pi<25&&k.v>9&&Math.abs(lat(k))<HW){k.air=k.airT=.55+k.v*.012;if(k===P1){SFX.hop();pop('AIR!','#5ec8ff')}}
+    if(k.air>0){k.air-=dt;if(k.air<=0){k.air=0;if(k===P1){s.shake=.22;SFX.bump();if(inp.D){k.boost=Math.max(k.boost,1.1);SFX.boost();pop('LANDING BOOST!','#5ec8ff')}}else if(Math.random()<SKILL[k.k]-.45)k.boost=Math.max(k.boost,.8)}}if(pi>N-90&&k.i<90){k.lap++;onLap(k)}else if(pi<90&&k.i>N-90)k.lap--;
     const l2=lat(k),W=HW+7.4;if(Math.abs(l2)>W){const n=NR[k.i],ex=l2-Math.sign(l2)*W;k.x-=n.x*ex;k.z-=n.z*ex;k.v*=.96;if(k===P1&&k.cool<=0){SFX.bump();s.shake=.2;k.cool=.5}
       const t=TG[k.i];const want=Math.atan2(t.x,t.z);let d=want-k.h;d=Math.atan2(Math.sin(d),Math.cos(d));k.h+=d*Math.min(1,dt*3)}
     k.cool-=dt;
@@ -1086,7 +1094,9 @@ function zookart3d(root,opts={}){
   function render(){if(!s){renderer.render(scene,cam);return}
     const W=box.clientWidth||800,H=box.clientHeight||500;if(cv.width!==Math.round(W*renderer.getPixelRatio())||cv.height!==Math.round(H*renderer.getPixelRatio())){renderer.setSize(W,H,false);cam.aspect=W/H;cam.updateProjectionMatrix();box.classList.toggle('zk-sm',H<340)}
     const tm=performance.now()/1000;
-    for(const k of karts){k.g.position.set(k.x,(k===P1&&s.mode==='menu')?.32:0,k.z);k.g.rotation.y=k.h;
+    for(const k of karts){let ky=(k===P1&&s.mode==='menu')?.32:0,pitch=0;const rd=(k.x-RAMP.x)*RAMP.tx+(k.z-RAMP.z)*RAMP.tz;
+      if(k.air>0){const u=1-k.air/k.airT;ky+=RAMP.H+Math.sin(u*Math.PI)*(1.2+k.airT*1.6)-RAMP.H*u;pitch=-.28*Math.cos(u*Math.PI)}else if(rd>-RAMP.L&&rd<0&&Math.abs(lat(k))<HW){ky+=RAMP.H*(1+rd/RAMP.L);pitch=-Math.atan2(RAMP.H,RAMP.L)}
+      k.g.position.set(k.x,ky,k.z);k.body.rotation.x+=(pitch-k.body.rotation.x)*.3;k.g.rotation.y=k.h;
       const yaw=k.drift?-k.dd*.42:0;k.body.rotation.y+=(yaw-k.body.rotation.y)*.18;k.body.position.y=k.hop>0?Math.sin(k.hop/.18*Math.PI)*.35:0;
       k.body.rotation.z=(k.drift?k.dd*.06:-k.yawV*.03)+(k.bump>0?Math.sin(tm*60)*.05:0);k.bump=Math.max(0,(k.bump||0)-.016);
       if(k.drv){k.drv.position.y=seat.y+ANIM[k.d.a].y+Math.abs(Math.sin(tm*9+k.k))*Math.min(1,k.v/20)*.06;k.drv.rotation.z=k.yawV*.12;k.drv.rotation.x=-(k.boost>0?.12:0)}
@@ -1094,11 +1104,11 @@ function zookart3d(root,opts={}){
     if(s.mode==='menu'){P1.g.rotation.y=P1.h+s.t*.6}
     if(s.mode==='menu'||s.mode==='over'){const a=s.t*.25,r=7.5;cam.fov+=(48-cam.fov)*.1;cam.position.set(P1.x+Math.sin(P1.h+a+2.4)*r,2.6,P1.z+Math.cos(P1.h+a+2.4)*r);cam.lookAt(P1.x,.9,P1.z)}
     else{let d=P1.h-s.camH;d=Math.atan2(Math.sin(d),Math.cos(d));s.camH+=d*.12;const portrait=H>W,D=portrait?8.8:7,Hh=portrait?4.2:3.5;
-      cam.position.set(P1.x-Math.sin(s.camH)*D,Hh,P1.z-Math.cos(s.camH)*D);
+      s.camY=(s.camY||0)+(P1.g.position.y-(s.camY||0))*.15;cam.position.set(P1.x-Math.sin(s.camH)*D,Hh+s.camY*.75,P1.z-Math.cos(s.camH)*D);
       if(s.mode==='count'&&s.cd>3.6){const u=Math.min(1,(5.4-s.cd)/1.8),e=u*u*(3-2*u),fx=Math.sin(P1.h),fz=Math.cos(P1.h),sx=P1.x+fx*26+fz*9,sz=P1.z+fz*26-fx*9;
         cam.position.set(sx+(cam.position.x-sx)*e,13+(Hh-13)*e,sz+(cam.position.z-sz)*e);const lx=P1.x+fx*6*(1-e)+fx*4*e,lz=P1.z+fz*6*(1-e)+fz*4*e;cam.lookAt(lx,1,lz);cam.fov+=(55-cam.fov)*.1;cam.updateProjectionMatrix();
         sun.position.set(P1.x-30,60,P1.z-20);sun.target.position.set(P1.x,0,P1.z);drawMap();renderer.render(scene,cam);return}if(s.shake>0){s.shake-=.016;cam.position.x+=(Math.random()-.5)*s.shake;cam.position.y+=(Math.random()-.5)*s.shake}
-      cam.lookAt(P1.x+Math.sin(s.camH)*4,1,P1.z+Math.cos(s.camH)*4);const fv=62+(P1.boost>0?12:0)+Math.max(0,P1.v-20)*.3;cam.fov+=(fv-cam.fov)*.08}
+      cam.lookAt(P1.x+Math.sin(s.camH)*4,1+s.camY*.85,P1.z+Math.cos(s.camH)*4);const fv=62+(P1.boost>0?12:0)+Math.max(0,P1.v-20)*.3;cam.fov+=(fv-cam.fov)*.08}
     cam.updateProjectionMatrix();
     sun.position.set(P1.x-30,60,P1.z-20);sun.target.position.set(P1.x,0,P1.z);
     if(((tm*30)|0)%2===0)drawMap();
