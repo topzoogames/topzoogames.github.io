@@ -996,7 +996,7 @@ function zookart3d(root,opts={}){
   cleanups.push(()=>{removeEventListener('keydown',onKey);removeEventListener('keyup',onKey);renderer.dispose();ac&&ac.close()});
   /* ---- physics ---- */
   const CLS={beginner:{n:'Beginner',ai:.9},standard:{n:'Standard',ai:1},expert:{n:'Expert',ai:1.07}};let cls=load('kart-class','standard');if(!CLS[cls])cls='standard';
-  const TIPS=['tip: hold drift until the sparks go purple, then let go for an ultra boost','tip: orange arrow pads give a free boost, the rivals aim for them too','tip: you start last, the first corner is the best place to pass','tip: driving on the grass slows you down a lot','tip: press P or Esc to pause'];
+  const TIPS=['tip: hold drift until the sparks go purple, then let go for an ultra boost','tip: orange arrow pads give a free boost, the rivals aim for them too','tip: you start last, the first corner is the best place to pass','tip: driving on the grass slows you down a lot','tip: press P or Esc to pause','tip: hold DRIFT as you land off the big ramp for a landing boost','tip: Expert rivals are fast, chain purple drifts to keep up'];
   const VMAX=29,SPARK=['#5ec8ff','#ff9a1f','#d46bff'];
   function drive(k,st,br,dr,dt){
     const l=lat(k),offroad=Math.abs(l)>HW+1.2;
