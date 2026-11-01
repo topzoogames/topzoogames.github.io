@@ -685,6 +685,135 @@ const CHEETAH_THUMB='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUND
 window.__cheetahShot=()=>new Promise(res=>{const d=document.createElement('div');d.style.cssText='position:fixed;left:0;top:0;width:800px;height:500px;z-index:99';
   document.body.appendChild(d);const stop=cheetah3d(d,{shot:u=>{res(u);setTimeout(()=>{stop();d.remove()},50)}})});
 
+/* Cheetah Drift Arena (PROTOTYPE, tile still 'maybe coming soon'): open neon lot, slide physics with handbrake, drift combos, 90 s sessions; coins go to the shared wallet */
+function drift3d(root,opts={}){
+  root.innerHTML=`<div class="g3d night"><div class="hud"><div><b id="dt">90</b><small>seconds</small></div><div><b id="dk">0</b><small>km/h</small></div><div><b id="ds">0</b><small>drift pts</small></div><div><b id="dc">x1</b><small>combo</small></div></div>
+    <div class="pop" id="pp"></div>
+    <div class="ov show3d" id="ov"><h2 id="oh">Cheetah Drift Arena</h2><div class="ldbar" id="lbw"><i id="lb"></i></div><p id="op">Loading the arena…</p><button class="btn" id="og" type="button" hidden>Start session</button><small id="ob"></small></div>
+    <div id="tc" hidden style="position:absolute;inset:auto 0 12px 0;display:flex;justify-content:space-between;padding:0 12px;z-index:3;pointer-events:none">
+      <div style="display:flex;gap:10px"><button class="nitro" id="tl" type="button" style="position:static;pointer-events:auto">◀</button><button class="nitro" id="tr" type="button" style="position:static;pointer-events:auto">▶</button></div>
+      <button class="nitro" id="th" type="button" style="position:static;pointer-events:auto">DRIFT</button></div></div>`;
+  const box=root.querySelector('.g3d'),$=id=>root.querySelector('#'+id);
+  let alive=true,raf=0,ldP=0;const cleanups=[];
+  const prog=v=>{ldP=Math.max(ldP,v);const b=$('lb');if(b)b.style.width=ldP+'%';if(ldP>=100)setTimeout(()=>{const w=$('lbw');w&&w.classList.add('done')},500)};
+  setTimeout(()=>prog(22),30);setTimeout(()=>{if(ldP<100)prog(100)},12000);
+  const stop=()=>{alive=false;cancelAnimationFrame(raf);cleanups.forEach(f=>{try{f()}catch(e){}})};
+  loadThree().then(()=>{prog(55);if(alive)build()}).catch(e=>{console.warn('drift3d',e);$('op').textContent='The 3D engine could not load. Check your internet connection, then reload the page.'});
+  return stop;
+
+  function build(){
+  const T=THREE,mobile=matchMedia('(pointer:coarse)').matches||box.clientWidth<700,AR=58;
+  const renderer=new T.WebGLRenderer({antialias:!mobile,preserveDrawingBuffer:!!opts.test});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.5:2));renderer.shadowMap.enabled=!mobile;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;renderer.outputEncoding=T.sRGBEncoding;
+  const cv=renderer.domElement;box.prepend(cv);
+  const scene=new T.Scene();scene.background=new T.Color(0x150f33);scene.fog=new T.Fog(0x150f33,70,190);
+  const cam=new T.PerspectiveCamera(62,1,.1,400);
+  const size=()=>{const w=box.clientWidth||800,h=box.clientHeight||500;renderer.setSize(w,h,false);cv.style.width='100%';cv.style.height='100%';cam.aspect=w/h;cam.updateProjectionMatrix()};size();
+  const ro=new ResizeObserver(size);ro.observe(box);cleanups.push(()=>ro.disconnect(),()=>renderer.dispose());
+  scene.add(new T.HemisphereLight(0x8e7cff,0x1a1028,.75));
+  const sun=new T.DirectionalLight(0xffd2a8,.9);sun.position.set(30,50,20);sun.castShadow=!mobile;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40});scene.add(sun,sun.target);
+  /* asphalt lot: code-drawn texture with paint lines + oil stains */
+  const tc=document.createElement('canvas');tc.width=tc.height=1024;const g=tc.getContext('2d');g.fillStyle='#2a2b33';g.fillRect(0,0,1024,1024);
+  for(let i=0;i<9000;i++){const v=30+Math.random()*30|0;g.fillStyle=`rgb(${v},${v},${v+6})`;g.fillRect(Math.random()*1024,Math.random()*1024,2,2)}
+  for(let i=0;i<14;i++){const x=Math.random()*1024,y=Math.random()*1024,r=20+Math.random()*60,gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(10,10,14,.5)');gr.addColorStop(1,'rgba(10,10,14,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2)}
+  g.strokeStyle='rgba(255,210,60,.75)';g.lineWidth=6;g.beginPath();g.arc(512,512,300,0,7);g.stroke();g.beginPath();g.arc(512,512,120,0,7);g.stroke();
+  g.strokeStyle='rgba(255,255,255,.55)';g.setLineDash([30,24]);g.beginPath();g.moveTo(512,40);g.lineTo(512,984);g.moveTo(40,512);g.lineTo(984,512);g.stroke();
+  const tex=new T.CanvasTexture(tc);tex.encoding=T.sRGBEncoding;tex.anisotropy=4;
+  const ground=new T.Mesh(new T.CircleGeometry(AR+4,64),new T.MeshStandardMaterial({map:tex,roughness:.55,metalness:.1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+  const outer=new T.Mesh(new T.PlaneGeometry(600,600),new T.MeshStandardMaterial({color:0x14121f,roughness:1}));outer.rotation.x=-Math.PI/2;outer.position.y=-.02;scene.add(outer);
+  /* barrier ring (red/white blocks) + neon lamp posts + TopZoo banners in the environment */
+  const bG=new T.BoxGeometry(3.6,1.1,1),bM=[new T.MeshStandardMaterial({color:0xd62828,roughness:.5}),new T.MeshStandardMaterial({color:0xeeeeee,roughness:.5})];
+  for(let i=0;i<100;i++){const a=i/100*Math.PI*2,m=new T.Mesh(bG,bM[i%2]);m.position.set(Math.cos(a)*(AR+1),.55,Math.sin(a)*(AR+1));m.rotation.y=-a+Math.PI/2;m.castShadow=!mobile;scene.add(m)}
+  const neon=[0xff3ea5,0x22d3ee,0xffb22e];
+  for(let i=0;i<10;i++){const a=i/10*Math.PI*2,x=Math.cos(a)*(AR+6),z=Math.sin(a)*(AR+6),c=neon[i%3];
+    const pole=new T.Mesh(new T.CylinderGeometry(.18,.22,9,8),new T.MeshStandardMaterial({color:0x333344}));pole.position.set(x,4.5,z);scene.add(pole);
+    const lamp=new T.Mesh(new T.SphereGeometry(.55,12,8),new T.MeshBasicMaterial({color:c}));lamp.position.set(x,9.2,z);scene.add(lamp);
+    const pl=new T.PointLight(c,mobile?0:1.1,34,2);pl.position.set(x*.9,8,z*.9);scene.add(pl)}
+  const bc=document.createElement('canvas');bc.width=512;bc.height=128;const bg=bc.getContext('2d');bg.fillStyle='#120c2c';bg.fillRect(0,0,512,128);bg.fillStyle='#ffb22e';bg.font='bold 64px sans-serif';bg.textAlign='center';bg.fillText('TopZoo Games',256,78);bg.fillStyle='#62d68f';bg.font='bold 22px sans-serif';bg.fillText('DRIFT ARENA',256,112);
+  const bt=new T.CanvasTexture(bc);bt.encoding=T.sRGBEncoding;
+  for(let i=0;i<4;i++){const a=i/4*Math.PI*2+.4,m=new T.Mesh(new T.PlaneGeometry(14,3.5),new T.MeshBasicMaterial({map:bt}));m.position.set(Math.cos(a)*(AR+9),6,Math.sin(a)*(AR+9));m.lookAt(0,6,0);scene.add(m)}
+  /* city skyline ring: boxes with a code-drawn lit-window texture */
+  const wc=document.createElement('canvas');wc.width=64;wc.height=128;const wg=wc.getContext('2d');wg.fillStyle='#0d0b1c';wg.fillRect(0,0,64,128);
+  for(let y=4;y<124;y+=8)for(let x=4;x<60;x+=8)if(Math.random()<.45){wg.fillStyle=['#ffd27a','#9fe8ff','#ff9fd0','#fff3c4'][Math.random()*4|0];wg.fillRect(x,y,4,5)}
+  const wt=new T.CanvasTexture(wc);wt.encoding=T.sRGBEncoding;wt.wrapS=wt.wrapT=T.RepeatWrapping;
+  for(let i=0;i<(mobile?26:44);i++){const a=i/(mobile?26:44)*Math.PI*2+Math.random()*.05,rr=AR+28+Math.random()*30,h=14+Math.random()*38,w=8+Math.random()*10,t=wt.clone();t.needsUpdate=true;t.repeat.set(w/8,h/16);
+    const m=new T.Mesh(new T.BoxGeometry(w,h,w),new T.MeshStandardMaterial({color:0x1a1630,emissive:0xffffff,emissiveMap:t,emissiveIntensity:.9,roughness:.9}));m.position.set(Math.cos(a)*rr,h/2,Math.sin(a)*rr);m.rotation.y=-a;scene.add(m)}
+  /* cones to slalom around (knock them = lose the combo) */
+  const coneG=new T.ConeGeometry(.45,1.1,12),coneM=new T.MeshStandardMaterial({color:0xff7a1a,roughness:.6}),cones=[];
+  for(const [x,z] of [[18,0],[-18,0],[0,18],[0,-18],[30,22],[-30,-22],[30,-22],[-30,22]]){const c=new T.Mesh(coneG,coneM);c.position.set(x,.55,z);c.castShadow=!mobile;scene.add(c);cones.push(c)}
+  /* car: the player's garage car from Cheetah Chase (shared), box car until the model loads */
+  const car=new T.Group();scene.add(car);
+  const body=new T.Mesh(new T.BoxGeometry(2,.8,4.2),new T.MeshStandardMaterial({color:0xffb22e,metalness:.4,roughness:.35}));body.position.y=.65;body.castShadow=true;car.add(body);
+  const carId=(()=>{const id=load('cheetah-car','race'),own=load('cheetah-owned',['race']);return own.includes(id)?id:'race'})();
+  const gl=()=>T.GLTFLoader?Promise.resolve():new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';sc.onload=res;sc.onerror=rej;document.head.appendChild(sc)});
+  gl().then(()=>new T.GLTFLoader().load('models/'+carId+'.glb',m=>{if(!alive)return;const o=m.scene,b1=new T.Box3().setFromObject(o),sz=new T.Vector3();b1.getSize(sz);o.scale.setScalar(4.3/Math.max(sz.x,sz.z));
+    const b2=new T.Box3().setFromObject(o),c=new T.Vector3();b2.getCenter(c);o.position.set(-c.x,-b2.min.y,-c.z);o.traverse(n=>{if(n.isMesh)n.castShadow=true});car.remove(body);car.add(o);prog(100)},undefined,()=>prog(100))).catch(()=>prog(100));
+  /* skid marks (pooled) + tyre smoke */
+  const SK=mobile?160:320,skM=new T.MeshBasicMaterial({color:0x050507,transparent:true,opacity:.55,depthWrite:false}),skG=new T.PlaneGeometry(.35,.9),skids=[];let skI=0;
+  for(let i=0;i<SK;i++){const m=new T.Mesh(skG,skM);m.rotation.x=-Math.PI/2;m.position.y=.012;m.visible=false;scene.add(m);skids.push(m)}
+  const skid=(x,z,h)=>{const m=skids[skI++%SK];m.visible=true;m.position.x=x;m.position.z=z;m.rotation.z=h};
+  const smC=document.createElement('canvas');smC.width=smC.height=64;const sg=smC.getContext('2d'),sgr=sg.createRadialGradient(32,32,0,32,32,32);sgr.addColorStop(0,'rgba(230,230,240,.8)');sgr.addColorStop(1,'rgba(230,230,240,0)');sg.fillStyle=sgr;sg.fillRect(0,0,64,64);
+  const smT=new T.CanvasTexture(smC),puffs=[];
+  for(let i=0;i<(mobile?40:80);i++){const sp=new T.Sprite(new T.SpriteMaterial({map:smT,transparent:true,depthWrite:false,opacity:0}));sp.visible=false;scene.add(sp);puffs.push({sp,life:0})}
+  const puff=(x,z)=>{const p=puffs.find(p=>p.life<=0);if(!p)return;p.life=1;p.sp.visible=true;p.sp.position.set(x,.5,z);p.sp.scale.setScalar(1.2)};
+  /* sound: engine hum + screech, made in code */
+  let ac=null,eng=null,engG=null,scrG=null;
+  const audio=()=>{if(ac)return;try{ac=new(window.AudioContext||window.webkitAudioContext)();eng=ac.createOscillator();eng.type='sawtooth';engG=ac.createGain();engG.gain.value=0;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=900;eng.connect(f);f.connect(engG);engG.connect(ac.destination);eng.start();
+    const n=ac.createBuffer(1,ac.sampleRate,ac.sampleRate),d=n.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;const src=ac.createBufferSource();src.buffer=n;src.loop=true;const bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=2400;bp.Q.value=6;scrG=ac.createGain();scrG.gain.value=0;src.connect(bp);bp.connect(scrG);scrG.connect(ac.destination);src.start()}catch(e){ac=null}};
+  cleanups.push(()=>{ac&&ac.close()});
+  const blip=(f0,f1,d,type,v)=>{if(!ac)return;const o=ac.createOscillator(),gg=ac.createGain();o.type=type;o.frequency.setValueAtTime(f0,ac.currentTime);o.frequency.exponentialRampToValueAtTime(f1,ac.currentTime+d);gg.gain.setValueAtTime(v,ac.currentTime);gg.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.connect(gg);gg.connect(ac.destination);o.start();o.stop(ac.currentTime+d)};
+  const pop=t=>{const p=$('pp');p.textContent=t;p.classList.remove('on');void p.offsetWidth;p.classList.add('on')};
+  /* state + physics: heading h, velocity (vx,vz); lateral grip drops with the handbrake / at big slip angles = drift */
+  let s;const SESSION=90;
+  const reset=()=>{s={mode:'ready',x:0,z:30,h:Math.PI,vx:0,vz:0,yr:0,t:SESSION,pts:0,combo:0,mult:1,calm:0,best:0,ang:0}};reset();
+  const inp={l:0,r:0,u:0,d:0,hb:0};
+  const kmap={ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r',ArrowUp:'u',KeyW:'u',ArrowDown:'d',KeyS:'d',Space:'hb',ShiftLeft:'hb'};
+  const kd=e=>{const k=kmap[e.code];if(k){inp[k]=1;e.preventDefault()}},ku=e=>{const k=kmap[e.code];if(k)inp[k]=0};
+  addEventListener('keydown',kd);addEventListener('keyup',ku);cleanups.push(()=>{removeEventListener('keydown',kd);removeEventListener('keyup',ku)});
+  for(const [id,k] of [['tl','l'],['tr','r'],['th','hb']]){const b=$(id);b.addEventListener('pointerdown',e=>{inp[k]=1;e.preventDefault()});for(const ev of['pointerup','pointercancel','pointerleave'])b.addEventListener(ev,()=>inp[k]=0)}
+  const bank=()=>{if(s.combo>0){const p=Math.round(s.combo*s.mult);s.pts+=p;if(p>s.best)s.best=p;pop('Drift x'+s.mult.toFixed(1)+'  +'+p);blip(500,1200,.18,'triangle',.08)}s.combo=0;s.mult=1};
+  const lose=why=>{if(s.combo>0){pop(why);blip(300,120,.25,'square',.05)}s.combo=0;s.mult=1};
+  function step(dt){
+    const play=s.mode==='play';const auto=mobile&&play;
+    const thr=play?(inp.u||auto?1:0):0,brk=play&&inp.d?1:0,st=play?(inp.r-inp.l):0;
+    const fx=Math.sin(s.h),fz=Math.cos(s.h),rx=fz,rz=-fx;
+    let vf=s.vx*fx+s.vz*fz,vr=s.vx*rx+s.vz*rz;const sp=Math.hypot(s.vx,s.vz);
+    vf+=(thr*15-brk*26-vf*.48)*dt;if(vf<-6)vf=-6;
+    const grip=inp.hb&&play?1.1:(Math.abs(vr)>4?3.2:9);vr-=vr*Math.min(1,grip*dt);
+    const turn=st*Math.min(1,sp/8)*(inp.hb?2.6:1.9);s.yr+=(turn-s.yr)*Math.min(1,dt*8);s.h-=s.yr*dt*(vf<0?-1:1);
+    s.vx=fx*vf+rx*vr;s.vz=fz*vf+rz*vr;s.x+=s.vx*dt;s.z+=s.vz*dt;
+    /* arena wall */
+    const r=Math.hypot(s.x,s.z);if(r>AR-1.6){const nx=s.x/r,nz=s.z/r,vn=s.vx*nx+s.vz*nz;s.x=nx*(AR-1.6);s.z=nz*(AR-1.6);if(vn>0){s.vx-=nx*vn*1.6;s.vz-=nz*vn*1.6;if(vn>6)lose('Wall! combo lost')}}
+    for(const c of cones){if(c.userData.down)continue;if(Math.hypot(c.position.x-s.x,c.position.z-s.z)<1.6){c.userData.down=1;c.rotation.z=1.4;c.position.y=.3;lose('Cone hit! combo lost');setTimeout(()=>{c.userData.down=0;c.rotation.z=0;c.position.y=.55},4000)}}
+    /* drift scoring: slip angle x speed while sliding; banks after .9 s of grip */
+    s.ang=Math.atan2(Math.abs(vr),Math.max(.1,Math.abs(vf)))*57.3;
+    if(play&&sp>9&&s.ang>14){s.combo+=s.ang*sp*dt*.06;s.mult=Math.min(5,s.mult+dt*.35);s.calm=0;
+      const bx=Math.sin(s.h),bz=Math.cos(s.h);for(const sx of[-1,1]){const wx=s.x-bx*1.5+rx*sx*.85,wz=s.z-bz*1.5+rz*sx*.85;skid(wx,wz,s.h);if(Math.random()<.5)puff(wx,wz)}}
+    else if(play){s.calm+=dt;if(s.calm>.9)bank()}
+    if(scrG)scrG.gain.setTargetAtTime(play&&s.ang>14&&sp>9?.09:0,ac.currentTime,.05);
+    if(engG){engG.gain.setTargetAtTime(play?.05:0,ac.currentTime,.1);eng.frequency.setTargetAtTime(50+sp*4.5,ac.currentTime,.05)}
+    for(const p of puffs)if(p.life>0){p.life-=dt*.9;p.sp.position.y+=dt*1.2;p.sp.scale.multiplyScalar(1+dt*1.4);p.sp.material.opacity=Math.max(0,p.life*.45);if(p.life<=0)p.sp.visible=false}
+    if(play){s.t-=dt;if(s.t<=0){s.t=0;bank();end()}}
+    car.position.set(s.x,0,s.z);car.rotation.y=s.h;car.rotation.z=-vr*.012;
+    /* chase camera, swings wider while drifting */
+    const cd=8.5+Math.min(3,sp*.06),vh=Math.atan2(s.vx,s.vz),ch=sp>4?vh*.35+s.h*.65:s.h;
+    const tx=s.x-Math.sin(ch)*cd,tz=s.z-Math.cos(ch)*cd;cam.position.x+=(tx-cam.position.x)*Math.min(1,dt*4);cam.position.z+=(tz-cam.position.z)*Math.min(1,dt*4);cam.position.y=4.2;cam.lookAt(s.x,1,s.z);
+    sun.position.set(s.x+30,50,s.z+20);sun.target.position.set(s.x,0,s.z);
+    $('dt').textContent=Math.ceil(s.t);$('dk').textContent=Math.round(sp*3.6);$('ds').textContent=s.pts+(s.combo>0?' +'+Math.round(s.combo*s.mult):'');$('dc').textContent='x'+s.mult.toFixed(1)}
+  const render=()=>renderer.render(scene,cam);
+  const best=()=>load('best-drift-arena',0);
+  function end(){s.mode='over';$('tc').hidden=true;const sc=s.pts,nb=sc>best();if(nb)save('best-drift-arena',sc);const coins=Math.floor(sc/40);if(coins>0)save('cheetah-coins',load('cheetah-coins',0)+coins);
+    $('oh').textContent=nb?'New best!':'Time!';$('op').innerHTML=`Drift points: <b>${sc}</b> · best single drift: <b>${s.best}</b> · +${coins} coins (shared with Cheetah Chase)`;
+    $('og').textContent='Drift again';$('ob').textContent='Best: '+Math.max(sc,best());$('ov').hidden=false;blip(520,1040,.25,'triangle',.08)}
+  const begin=()=>{reset();s.mode='play';$('ov').hidden=true;$('tc').hidden=!mobile;audio();if(ac&&ac.state==='suspended')ac.resume()};
+  $('og').onclick=begin;
+  $('op').textContent=mobile?'Hold ◀ ▶ to steer (the car accelerates by itself). Hold DRIFT to slide the back out. Long, wide slides score big; walls and cones lose your combo.':'Arrow keys or WASD to drive. Hold Space for the handbrake to slide. Long, wide slides score big; walls and cones lose your combo. 90 seconds.';
+  $('og').hidden=false;$('ob').textContent=best()?'Best: '+best():'';
+  if(opts.test){opts.test({s:()=>s,inp,step,render,begin,cv});return}
+  let last=performance.now();const loop=now=>{if(!alive)return;const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();raf=requestAnimationFrame(loop)};raf=requestAnimationFrame(loop);
+  }
+}
+
 function cheetah3d(root,opts={}){
   root.innerHTML=`<div class="g3d night"><div class="hud"><div><b id="hd">0</b><small>metres</small></div><div><b id="hk">0</b><small>km/h</small></div><div><b id="hs">0</b><small>score</small></div><div><b id="hn">100</b><small>nitro</small></div><div class="hbtns"><button class="mute" id="hm" type="button"></button><button class="mute" id="hmu" type="button"></button><button class="mute" id="hq" type="button"></button></div></div>
     <div class="pop" id="pp"></div>
