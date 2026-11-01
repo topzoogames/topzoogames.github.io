@@ -689,7 +689,7 @@ window.__cheetahShot=()=>new Promise(res=>{const d=document.createElement('div')
 function drift3d(root,opts={}){
   root.innerHTML=`<div class="g3d night"><div class="hud"><div><b id="dt">90</b><small>seconds</small></div><div><b id="dk">0</b><small>km/h</small></div><div><b id="ds">0</b><small>drift pts</small></div><div><b id="dc">x1</b><small>combo</small></div></div>
     <div class="pop" id="pp"></div>
-    <div class="ov show3d" id="ov"><h2 id="oh">Cheetah Drift Arena</h2><div class="ldbar" id="lbw"><i id="lb"></i></div><p id="op">Loading the arena…</p><div class="gar" id="trk"></div><div class="gar mis" id="mis"></div><button class="btn" id="og" type="button" hidden>Start session</button><small id="ob"></small></div>
+    <div class="ov show3d" id="ov"><h2 id="oh">Cheetah Drift Arena</h2><div class="ldbar" id="lbw"><i id="lb"></i></div><p id="op">Loading the arena…</p><div class="gar" id="trk"></div><div id="crr" class="mis crr"></div><div class="gar mis" id="mis"></div><button class="btn" id="og" type="button" hidden>Start session</button><small id="ob"></small></div>
     <div id="tc" hidden style="position:absolute;inset:auto 0 12px 0;display:flex;justify-content:space-between;padding:0 12px;z-index:3;pointer-events:none">
       <div style="display:flex;gap:10px"><button class="nitro" id="tl" type="button" style="position:static;pointer-events:auto">◀</button><button class="nitro" id="tr" type="button" style="position:static;pointer-events:auto">▶</button></div>
       <button class="nitro" id="th" type="button" style="position:static;pointer-events:auto">DRIFT</button></div></div>`;
@@ -828,10 +828,10 @@ function drift3d(root,opts={}){
     $('dt').textContent=Math.ceil(s.t);$('dk').textContent=Math.round(sp*3.6);$('ds').textContent=s.pts+(s.combo>0?' +'+Math.round(s.combo*s.mult):'');$('dc').textContent='x'+s.mult.toFixed(1)}
   const render=()=>composer?composer.render():renderer.render(scene,cam);
   const best=()=>load('best-drift-arena',0);
-  function end(){s.mode='over';$('tc').hidden=true;const sc=s.pts,nb=sc>best();if(nb)save('best-drift-arena',sc);const coins=Math.floor(sc/40);if(coins>0)save('cheetah-coins',load('cheetah-coins',0)+coins);const md=misEnd();
+  function end(){s.mode='over';$('tc').hidden=true;const sc=s.pts,nb=sc>best();if(nb)save('best-drift-arena',sc);const coins=Math.floor(sc/40);if(coins>0)save('cheetah-coins',load('cheetah-coins',0)+coins);const md=misEnd()+crEnd();
     $('oh').textContent='Time!';$('op').innerHTML=`${nb?'<span class="nbest">NEW BEST!</span>':''}<span class="res"><span><b>${sc}</b>drift pts</span><span><b>${s.best}</b>best drift</span><span><b>${s.donuts||0}</b>donuts</span><span class="rc"><b>+${coins}</b>coins</span></span>${md}<small style="display:block;opacity:.75;margin-top:4px">Coins are shared with Cheetah Chase and Rhino Rally. Wallet: ${load('cheetah-coins',0)}</small>`;
-    $('og').textContent='Drift again';drawTrk();$('mis').hidden=false;$('trk').hidden=false;$('ob').textContent='Best: '+Math.max(sc,best());$('ov').hidden=false;blip(520,1040,.25,'triangle',.08)}
-  const begin=()=>{reset();s.mode='play';$('ov').hidden=true;$('mis').hidden=true;$('trk').hidden=true;$('tc').hidden=!mobile;audio();if(ac&&ac.state==='suspended')ac.resume()};
+    $('og').textContent='Drift again';drawTrk();$('mis').hidden=false;$('trk').hidden=false;$('crr').hidden=false;$('ob').textContent='Best: '+Math.max(sc,best());$('ov').hidden=false;blip(520,1040,.25,'triangle',.08)}
+  const begin=cm=>{if(cm!==true)crRun=0;reset();if(crRun)s.t=crRun>20?60:crRun>10?75:90;s.mode='play';$('crr').hidden=true;$('ov').hidden=true;$('mis').hidden=true;$('trk').hidden=true;$('tc').hidden=!mobile;audio();if(ac&&ac.state==='suspended')ac.resume()};
   /* 3 daily missions picked by date (from 5); coins into the shared wallet; saved in tz-drift-missions */
   const DPOOL=[['pts','Score 600 drift pts in one session',600,60],['donut','Pull 2 donuts in one session',2,70],['one','Hold one drift worth 150+',150,60],['zone','Drift 8 s inside the green zone',8,70],['total','Score 2000 drift pts today',2000,80]];
   const dDay=(()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()})();
@@ -842,14 +842,26 @@ function drift3d(root,opts={}){
       if(v>=m[2]){dms.done.push(id);save('cheetah-coins',load('cheetah-coins',0)+m[3]);out+=`<span class="mdone">Mission done: ${m[1]} · +${m[3]} coins</span>`}}
     save('drift-missions',dms);drawMis();return out};
   drawMis();
+  /* career: 30 levels x 3 goals (session pts / donuts / best single drift); goals tick across runs; 1 star opens the next level; 30 coins x level per new star; shorter sessions from level 11 (75 s) and 21 (60 s) */
+  const CRN=30,crG=n=>[['pts',300+150*n,' drift pts in one session'],['donut',Math.ceil(n/4),' donuts in one session'],['one',80+20*n,'+ in one drift']];
+  let cr=load('drift-career',{}),crL=Math.max(1,Math.min(CRN,load('drift-career-sel',1))),crRun=0;
+  const crSt=n=>{const m=cr[n]||0;return(m&1)+(m>>1&1)+(m>>2&1)},crOpen=n=>n===1||crSt(n-1)>0;
+  const drawCR=()=>{const el=$('crr');if(!el||opts.test)return;let tot=0;for(let i=1;i<=CRN;i++)tot+=crSt(i);const m=cr[crL]||0;
+    el.innerHTML=`<b>Career · ${tot}/${CRN*3} ★</b><span style="display:flex;align-items:center;gap:8px;justify-content:center"><button type="button" class="btn" data-d="-1" style="padding:2px 10px">‹</button>Level ${crL} ${'★'.repeat(crSt(crL))}${'☆'.repeat(3-crSt(crL))}<button type="button" class="btn" data-d="1" style="padding:2px 10px">›</button></span>`+
+      (crOpen(crL)?crG(crL).map(([k,v,t],i)=>`<span class="${m>>i&1?'ok':''}">${m>>i&1?'✔':'○'} ${k==='one'?'One drift worth '+v+'+':'Get '+v+t}</span>`).join('')+`<button type="button" class="btn" data-a="go" style="margin-top:4px;padding:8px 14px;font-size:14px">Play level ${crL}${crL>20?' (60 s)':crL>10?' (75 s)':''}</button>`:`<span>\u{1F512} Get 1 star on level ${crL-1} to open</span>`);
+    el.querySelectorAll('button').forEach(bt=>bt.onclick=()=>{if(bt.dataset.a==='go'){crRun=crL;begin(true);return}crL=Math.max(1,Math.min(CRN,crL+Number(bt.dataset.d)));save('drift-career-sel',crL);drawCR()})};
+  const crEnd=()=>{if(!crRun)return'';const n=crRun,old=cr[n]||0,run={pts:s.pts,donut:s.donuts||0,one:s.best};let m=old;crG(n).forEach(([k,v],i)=>{if(run[k]>=v)m|=1<<i});crRun=0;
+    if(m===old)return `<span class="mdone">Career level ${n}: no new stars this time</span>`;cr[n]=m;save('drift-career',cr);const ns=crSt(n)-((old&1)+(old>>1&1)+(old>>2&1)),pay=30*n*ns;save('cheetah-coins',load('cheetah-coins',0)+pay);
+    if(crSt(n)>0&&n<CRN&&crL===n){crL=n+1;save('drift-career-sel',crL)}drawCR();return `<span class="mdone">Career level ${n}: +${ns} ★ · +${pay} coins</span>`};
+  drawCR();
   const drawTrk=()=>{const el=$('trk');if(!el||opts.test)return;el.innerHTML='';const bst=load('best-drift-arena',0);
     [['night','Neon Lot',0],['dusk','Sunset Docks',1000]].forEach(([id,n,need])=>{const ok=bst>=need,b=document.createElement('button');b.type='button';b.className='gb'+(id===AN?' on':'');
       b.innerHTML=`<b>${n}</b><small>${id===AN?'Arena selected':ok?'Tap to drive':'\u{1F512} Best '+need+' to unlock'}</small>`;b.onclick=()=>{if(!ok||id===AN)return;save('drift-arena',id);stop();fwd=drift3d(root,opts)};el.appendChild(b)})};
   drawTrk();
-  $('og').onclick=begin;
+  $('og').onclick=()=>begin();
   $('op').textContent=mobile?'Hold ◀ ▶ to steer (the car accelerates by itself). Hold DRIFT to slide the back out. Long, wide slides score big; walls and cones lose your combo.':'Arrow keys or WASD to drive. Hold Space for the handbrake to slide. Long, wide slides score big; walls and cones lose your combo. 90 seconds.';
   $('og').hidden=false;$('ob').textContent=best()?'Best: '+best():'';
-  if(opts.test){opts.test({s:()=>s,inp,step,render,begin,cv});return}
+  if(opts.test){opts.test({s:()=>s,inp,step,render,begin,cv,career:n=>{crRun=n}});return}
   let last=performance.now();const loop=now=>{if(!alive)return;const dt=Math.min(.05,(now-last)/1000);last=now;step(dt);render();raf=requestAnimationFrame(loop)};raf=requestAnimationFrame(loop);
   }
 }
