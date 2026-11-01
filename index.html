@@ -973,7 +973,7 @@ function zookart3d(root,opts={}){
     k.g.position.set(k.x,0,k.z);k.g.rotation.y=k.h})}
   const ord=n=>n+(n===1?'st':n===2?'nd':n===3?'rd':'th');
   const prog=k=>k.fin?1e7-k.finT*100:k.lap*N+k.i;
-  function begin(){place();s={mode:'count',cd:5.4,t:0,last:4,camH:P1.h,shake:0,fov:62,finWait:0,boostFx:0};inp.L=inp.R=inp.B=inp.D=0;
+  function begin(){place();if(plinth)plinth.visible=false;s={mode:'count',cd:5.4,t:0,last:4,camH:P1.h,shake:0,fov:62,finWait:0,boostFx:0};inp.L=inp.R=inp.B=inp.D=0;
     $('kov').hidden=true;box.classList.remove('zk-menu');$('khelp').style.display='';$('kp').textContent='6/6';$('kl').textContent='1/3';$('kt').textContent='0.0';au();music(true)}
   let popT=0;function pop(t,col){const p=$('kpop');p.textContent=t;p.style.color=col||'#ffb22e';p.classList.remove('on');void p.offsetWidth;p.classList.add('on')}
   function big(t,ms=700){const b=$('kbig');b.textContent=t;b.style.opacity=1;b.style.transform='translate(-50%,-50%) scale(1.25)';requestAnimationFrame(()=>{b.style.transform='translate(-50%,-50%) scale(1)'});clearTimeout(big.t);big.t=setTimeout(()=>{b.style.opacity=0},ms)}
@@ -1017,7 +1017,7 @@ function zookart3d(root,opts={}){
     k.cool-=dt;
     for(const pd of PADS){let di=k.i-pd.i;if(di>N/2)di-=N;if(di<-N/2)di+=N;if(di>-4&&di<4&&Math.abs(l2-pd.l)<2.4&&k.boost<.7){k.boost=1;if(k===P1){SFX.pad();pop('BOOST PAD!','#ffd23f');s.shake=.15}}}
     k.hop=Math.max(0,k.hop-dt)}
-  function onLap(k){const now=s.t;if(k.lap>=2){k.lapT.push(now-k.lapStart)}k.lapStart=now;
+  function onLap(k){const now=s.t;if(k.lap>=2){const lt=now-k.lapStart;k.lapT.push(lt);if(k===P1&&k.lap<=3){const fast=k.lapT.length>1&&lt<=Math.min(...k.lapT);setTimeout(()=>pop((fast?'BEST LAP ':'LAP ')+fmt(lt),fast?'#7dff6a':'#ffd23f'),950)}}k.lapStart=now;
     if(k.lap>3&&!k.fin){k.fin=1;k.finT=now;if(k===P1)finish()}
     else if(k===P1&&k.lap>=2){SFX.lap();if(k.lap===3)big('FINAL LAP!',1100);else big('LAP '+k.lap,900)}}
   function ai(k,dt){const ahead=Math.round(10+k.v*.9);const ti=(k.i+ahead)%N;k.off+=(Math.sin(s.t*.35+k.ph)*4.2-k.off)*dt*.5;
@@ -1045,7 +1045,7 @@ function zookart3d(root,opts={}){
       <div class="zk-row"><button class="zk-btn" id="kgo" type="button">Race again</button><button class="zk-btn alt" id="kmn" type="button">Menu</button></div>`;
     $('kov').hidden=false;box.classList.add('zk-menu');$('kgo').onclick=e=>{e.stopPropagation();begin()};$('kmn').onclick=e=>{e.stopPropagation();menu()}}
   const fmt=t=>{const m=Math.floor(t/60),x=t-m*60;return m+':'+(x<10?'0':'')+x.toFixed(2)};
-  function menu(){place();s={mode:'menu',t:0,camH:P1.h,shake:0,fov:58};$('ksub').textContent='Savanna Speedway · 3 laps';$('khelp').style.display='none';
+  let plinth=null;function menu(){place();if(!plinth){plinth=new T.Group();const pm=new T.Mesh(new T.CylinderGeometry(1.9,2.05,.32,40),new T.MeshStandardMaterial({color:'#7a4a22',roughness:.8}));pm.position.y=.16;pm.receiveShadow=true;const rim=new T.Mesh(new T.TorusGeometry(1.95,.07,8,48),new T.MeshStandardMaterial({color:'#ffd23f',roughness:.4,metalness:.3}));rim.rotation.x=Math.PI/2;rim.position.y=.32;plinth.add(pm,rim);scene.add(plinth)}plinth.position.set(P1.x,0,P1.z);plinth.visible=true;s={mode:'menu',t:0,camH:P1.h,shake:0,fov:58};$('ksub').textContent='Savanna Speedway · 3 laps';$('khelp').style.display='none';
     $('kbody').innerHTML=`<div class="zk-row" style="flex-direction:column;align-items:center;gap:12px"><button class="zk-btn" id="kgo" type="button">Race!</button>
       <div class="zk-cls" id="kcls">${Object.keys(CLS).map(c=>`<button type="button" data-c="${c}" class="${c===cls?'on':''}">${CLS[c].n}${best.ct&&best.ct[c]?' · '+fmt(best.ct[c]):''}</button>`).join('')}</div>
       <p class="zk-card">🐯 You drive the <b>Tiger kart</b> against 5 rivals.<br>${touch?'◀ ▶ steer · hold <b>DRIFT</b> while turning':'← → steer · hold <b>SPACE</b> while turning'} to drift: sparks go <span style="color:#5ec8ff">blue</span> → <span style="color:#ff9a1f">orange</span> → <span style="color:#d46bff">purple</span>, let go for a turbo! Orange arrow pads boost you too.</p>
@@ -1079,18 +1079,19 @@ function zookart3d(root,opts={}){
     /* places */
     const order=[...karts].sort((a,b)=>prog(b)-prog(a));order.forEach((k,i)=>k.pos=i+1);
     if(s.mode==='race'){if(P1.pos<P1.prevPos&&s.t>3){SFX.pass();pop('▲ '+ord(P1.pos),'#7dff6a')}P1.prevPos=P1.pos}
-    $('kp').textContent=P1.pos+'/6';$('kl').textContent=Math.min(3,Math.max(1,P1.lap))+'/3';$('kt').textContent=(s.mode==='fin'?P1.finT:s.t).toFixed(1);
+    $('kp').textContent=P1.pos+'/6';$('kl').textContent=Math.min(3,Math.max(1,P1.lap))+'/3';$('kt').textContent=fmt(s.mode==='fin'?P1.finT:s.t);
     $('kpos').innerHTML=P1.pos+'<small>'+ord(P1.pos).slice(-2)+'</small>';
     if(eng&&ac){eng.o1.frequency.setTargetAtTime(55+Math.abs(P1.v)*5.5+(P1.boost>0?40:0),ac.currentTime,.05);eng.f.frequency.setTargetAtTime(500+P1.v*40,ac.currentTime,.1)}
     screech(s.mode==='race'&&P1.drift&&!muted)}
   function render(){if(!s){renderer.render(scene,cam);return}
     const W=box.clientWidth||800,H=box.clientHeight||500;if(cv.width!==Math.round(W*renderer.getPixelRatio())||cv.height!==Math.round(H*renderer.getPixelRatio())){renderer.setSize(W,H,false);cam.aspect=W/H;cam.updateProjectionMatrix();box.classList.toggle('zk-sm',H<340)}
     const tm=performance.now()/1000;
-    for(const k of karts){k.g.position.set(k.x,0,k.z);k.g.rotation.y=k.h;
+    for(const k of karts){k.g.position.set(k.x,(k===P1&&s.mode==='menu')?.32:0,k.z);k.g.rotation.y=k.h;
       const yaw=k.drift?-k.dd*.42:0;k.body.rotation.y+=(yaw-k.body.rotation.y)*.18;k.body.position.y=k.hop>0?Math.sin(k.hop/.18*Math.PI)*.35:0;
       k.body.rotation.z=(k.drift?k.dd*.06:-k.yawV*.03)+(k.bump>0?Math.sin(tm*60)*.05:0);k.bump=Math.max(0,(k.bump||0)-.016);
       if(k.drv){k.drv.position.y=seat.y+ANIM[k.d.a].y+Math.abs(Math.sin(tm*9+k.k))*Math.min(1,k.v/20)*.06;k.drv.rotation.z=k.yawV*.12;k.drv.rotation.x=-(k.boost>0?.12:0)}
       for(const w of k.wheels)w.rotation.x+=k.v*.016/.33;for(const w of k.fw)w.rotation.y=-(k.yawV*.25)}
+    if(s.mode==='menu'){P1.g.rotation.y=P1.h+s.t*.6}
     if(s.mode==='menu'||s.mode==='over'){const a=s.t*.25,r=7.5;cam.fov+=(48-cam.fov)*.1;cam.position.set(P1.x+Math.sin(P1.h+a+2.4)*r,2.6,P1.z+Math.cos(P1.h+a+2.4)*r);cam.lookAt(P1.x,.9,P1.z)}
     else{let d=P1.h-s.camH;d=Math.atan2(Math.sin(d),Math.cos(d));s.camH+=d*.12;const portrait=H>W,D=portrait?8.8:7,Hh=portrait?4.2:3.5;
       cam.position.set(P1.x-Math.sin(s.camH)*D,Hh,P1.z-Math.cos(s.camH)*D);
