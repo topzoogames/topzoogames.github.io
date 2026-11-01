@@ -977,13 +977,13 @@ function zookart3d(root,opts={}){
   const protos={};let kartP=null,seat=new T.Vector3(0,.5,-.2);const KMOD={rocket:{f:'rocket-kart.glb',sy:.74,sz:-.32},jeep:{f:'jeep-kart.glb',sy:.9,sz:-.3},ice:{f:'ice-kart.glb',sy:.74,sz:-.32}};const KFOR={tiger:'rocket',rhino:'jeep',penguin:'ice'};
   const gl=()=>T.GLTFLoader?Promise.resolve():new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';sc.onload=res;sc.onerror=rej;document.head.appendChild(sc)});
   const ld=u=>new Promise(res=>new T.GLTFLoader().load(u,g=>res(g.scene),undefined,()=>res(null)));
-  const ANIM={tiger:{f:'tiger.glb',h:1.8,yaw:0,y:0},penguin:{f:'penguin.glb',h:1.2,yaw:0,y:0},rhino:{f:'rhino.glb',h:1.7,yaw:0,y:0}};
+  const ANIM={tiger:{f:'cartoon-tiger.glb',h:1.5,yaw:0,y:0},penguin:{f:'cartoon-penguin.glb',h:1.4,yaw:0,y:0},rhino:{f:'cartoon-rhino.glb',h:1.4,yaw:0,y:0}};
   gl().then(()=>Promise.all([ld('models/kart-oobi.glb'),...Object.keys(KMOD).map(kk=>ld('models/'+KMOD[kk].f).then(m=>{if(!m)return;const bb=new T.Box3().setFromObject(m),sz=bb.getSize(new T.Vector3()),r=2.9/sz.z;m.scale.setScalar(r);m.position.y=-bb.min.y*r;m.traverse(o=>{if(o.isMesh){o.castShadow=true;const mt=o.material;if(mt&&mt.color&&!mt.userData.fx){mt.userData.fx=1;mt.color.convertLinearToSRGB();if(mt.metalness>.5){mt.metalness=.35;mt.roughness=Math.max(.3,mt.roughness)}if(mt.emissive)mt.emissive.convertLinearToSRGB()}}});KMOD[kk].p=m;KMOD[kk].r=r;KMOD[kk].seat=new T.Vector3(0,KMOD[kk].sy*r+m.position.y,KMOD[kk].sz*r)})),...Object.keys(ANIM).map(a=>ld('models/'+ANIM[a].f).then(m=>{protos[a]=m}))])).then(([kp])=>{if(!alive)return;lb(90);
     if(kp){const bb=new T.Box3().setFromObject(kp),sz=bb.getSize(new T.Vector3()),sc=2.7/sz.z;kp.scale.setScalar(sc);kp.position.y=-bb.min.y*sc;
       kp.traverse(o=>{if(o.isMesh)o.castShadow=true});
       const c=kp.getObjectByName('character');if(c){seat.copy(c.position).multiplyScalar(sc);seat.y+=kp.position.y;c.visible=false}kartP=kp}
     for(const a in protos){const m=protos[a];if(!m)continue;const bb=new T.Box3().setFromObject(m),sz=bb.getSize(new T.Vector3()),sc=ANIM[a].h/Math.max(sz.x,sz.y,sz.z);m.scale.setScalar(sc);
-      const c=bb.getCenter(new T.Vector3());m.position.set(-c.x*sc,-bb.min.y*sc,-c.z*sc);m.traverse(o=>{if(o.isMesh)o.castShadow=true});
+      const c=bb.getCenter(new T.Vector3());m.position.set(-c.x*sc,-bb.min.y*sc,-c.z*sc);m.traverse(o=>{if(o.isMesh){o.castShadow=true;const mt=o.material;if(mt&&mt.color&&!mt.userData.fx){mt.userData.fx=1;mt.color.convertLinearToSRGB();if(mt.metalness>.5)mt.metalness=.35}}});
       const w=new T.Group();w.add(m);w.rotation.y=ANIM[a].yaw;protos[a]=w}
     karts.forEach(dress);lb(100)}).catch(e=>{console.warn('zookart models',e);lb(100)});
   function dress(k){if(!kartP)return;const b=k.body;while(b.children.length)b.remove(b.children[0]);k.wheels=[];k.fw=[];
