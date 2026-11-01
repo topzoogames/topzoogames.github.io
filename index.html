@@ -843,8 +843,8 @@ function drift3d(root,opts={}){
     if(play){s.t-=dt;if(s.t<=0){s.t=0;bank();end()}}
     car.position.set(s.x,0,s.z);car.rotation.y=s.h;car.rotation.z=-vr*.012;
     /* chase camera, swings wider while drifting */
-    const cd=6.2+Math.min(1.8,sp*.05),vh=Math.atan2(s.vx,s.vz),ch=sp>4?vh*.35+s.h*.65:s.h;
-    const tx=s.x-Math.sin(ch)*cd,tz=s.z-Math.cos(ch)*cd;cam.position.x+=(tx-cam.position.x)*Math.min(1,dt*6);cam.position.z+=(tz-cam.position.z)*Math.min(1,dt*6);cam.position.y=3.3;cam.lookAt(s.x+Math.sin(s.h)*3,.9,s.z+Math.cos(s.h)*3);
+    if(!play&&!opts.test){s.orb=(s.orb||0)+dt*.22;const oa=s.orb+s.h,or=8.5;cam.position.set(s.x+Math.sin(oa)*or,2.6+Math.sin(s.orb*.7)*.6,s.z+Math.cos(oa)*or);cam.lookAt(s.x,.8,s.z)}else{const cd=6.2+Math.min(1.8,sp*.05),vh=Math.atan2(s.vx,s.vz),ch=sp>4?vh*.35+s.h*.65:s.h;
+    const tx=s.x-Math.sin(ch)*cd,tz=s.z-Math.cos(ch)*cd;cam.position.x+=(tx-cam.position.x)*Math.min(1,dt*6);cam.position.z+=(tz-cam.position.z)*Math.min(1,dt*6);cam.position.y=3.3;cam.lookAt(s.x+Math.sin(s.h)*3,.9,s.z+Math.cos(s.h)*3);}
     sun.position.set(s.x+30,50,s.z+20);sun.target.position.set(s.x,0,s.z);
     $('dt').textContent=Math.ceil(s.t);$('dk').textContent=Math.round(sp*3.6);$('ds').textContent=s.pts+(s.combo>0?' +'+Math.round(s.combo*s.mult):'');$('dc').textContent='x'+s.mult.toFixed(1)}
   const render=()=>composer&&QL()!=='low'?composer.render():renderer.render(scene,cam);
