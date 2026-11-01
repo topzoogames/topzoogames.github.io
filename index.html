@@ -756,17 +756,22 @@ function monkeyswing3d(root,opts={}){
   const gl=()=>T.GLTFLoader?Promise.resolve():new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';sc.onload=res;sc.onerror=rej;document.head.appendChild(sc)});
   gl().then(()=>new T.GLTFLoader().load('models/monkey.glb',g=>{if(!alive)return;const m=g.scene;const bb=new T.Box3().setFromObject(m),sz=bb.getSize(new T.Vector3()),k=1.6/Math.max(sz.x,sz.y,sz.z);
     m.scale.setScalar(k);const c=bb.getCenter(new T.Vector3()).multiplyScalar(k);m.position.sub(c);m.traverse(o=>{if(o.isMesh){o.castShadow=true;if(o.material){o.material.roughness=.85;o.material.color&&o.material.color.multiplyScalar(1.7);o.material.emissive=new T.Color('#3a2210')}}});
-    const piv=new T.Group();piv.add(m);piv.rotation.y=MODEL_YAW;while(body.children.length)body.remove(body.children[0]);body.add(piv);body.userData.code=false;lb(100)},undefined,()=>lb(100))).catch(()=>lb(100));
+    const piv=new T.Group();piv.add(m);piv.rotation.y=MODEL_YAW;m.traverse(o=>{if(o.isMesh&&o.material){o.material=o.material.clone();o.userData.c0=o.material.color.clone();mats.push(o.material)}});applySkin();while(body.children.length)body.remove(body.children[0]);body.add(piv);body.userData.code=false;lb(100)},undefined,()=>lb(100))).catch(()=>lb(100));
+  const mats=[],SKINS=[['Classic',0,'#ffffff'],['Golden',12,'#ffd23f'],['Snow',30,'#e8f4ff'],['Cocoa',50,'#8a5a3a'],['Neon',75,'#7cff9a']];
+  let skin=load('monkey-skin',0);const totalStars=()=>stars.reduce((a,b)=>a+(b||0),0);
+  function applySkin(){const c=new T.Color(SKINS[skin][2]);mats.forEach(m=>{const o=m.userData&&m.userData.c0;})
+    body.traverse(o=>{if(o.isMesh&&o.userData.c0){o.material.color.copy(o.userData.c0).multiply(c).multiplyScalar(skin?1.25:1)}})}
   const MODEL_YAW=opts.yaw!=null?opts.yaw:Math.PI/2;
   /* level objects */
   const lvl=new T.Group();scene.add(lvl);
   const ropeM=new T.MeshStandardMaterial({color:'#a0702a',roughness:.9});const rope=new T.Mesh(new T.CylinderGeometry(.05,.05,1,5),ropeM);rope.geometry.translate(0,.5,0);scene.add(rope);
+  const TRN=28,trailPos=new Float32Array(TRN*3),trailG=new T.BufferGeometry();trailG.setAttribute('position',new T.BufferAttribute(trailPos,3));const trail=new T.Line(trailG,new T.LineBasicMaterial({color:'#fff6b0',transparent:true,opacity:.7}));trail.frustumCulled=false;scene.add(trail);
   const nanaG=new T.TorusGeometry(.5,.17,6,12,Math.PI*1.1),nanaM=new T.MeshStandardMaterial({color:'#ffe135',roughness:.5,emissive:'#6a5200'});
   const thornM=M('#6b2f6b'),spikeM=M('#e8e0ff',.6);
   let L=null;
   function rng(seed){let s=seed*9301+49297;return()=>((s=(s*9301+49297)%233280)/233280)}
   function makeLevel(n){while(lvl.children.length){const o=lvl.children.pop();o.traverse&&o.traverse(q=>{q.geometry&&q.geometry!==nanaG&&q.geometry.dispose()})}
-    const r=rng(n*17+3),hooks=[],nanas=[],thorns=[];let x=6;const cnt=4+Math.floor(n*.45);
+    const r=rng(n*17+3),hooks=[],nanas=[],thorns=[],shrooms=[];let x=6;const cnt=4+Math.floor(n*.45);
     for(let i=0;i<cnt;i++){const y=6.5+r()*2.2-(n>12?r()*1.2:0);hooks.push({x,y});
       const vine=new T.Mesh(new T.CylinderGeometry(.08,.08,14,5),vineM);vine.position.set(x,y+7,0);lvl.add(vine);
       const ring=new T.Mesh(new T.TorusGeometry(.38,.09,8,16),ringM);ring.position.set(x,y,0);lvl.add(ring);hooks[i].ring=ring;
@@ -774,6 +779,9 @@ function monkeyswing3d(root,opts={}){
       if(n>=5&&i>0&&i<cnt-1&&r()<Math.min(.25+n*.02,.6)){const ty=y-5.6-r()*.8,tx=x+2.7;const g=new T.Group();const c=new T.Mesh(new T.IcosahedronGeometry(.7,0),thornM);g.add(c);
         for(let s=0;s<8;s++){const sp=new T.Mesh(new T.ConeGeometry(.12,.6,4),spikeM);const a=s/8*Math.PI*2;sp.position.set(Math.cos(a)*.7,Math.sin(a)*.7,0);sp.rotation.z=a-Math.PI/2;g.add(sp)}
         g.position.set(tx,ty,0);lvl.add(g);thorns.push({x:tx,y:ty,m:g})}
+      if(n>=7&&i<cnt-1&&r()<.3){const mx=x+3.4,g=new T.Group();const cap=new T.Mesh(new T.SphereGeometry(1.1,14,8,0,Math.PI*2,0,Math.PI/2),M('#ff4d6d',.6));cap.scale.y=.6;g.add(cap);
+        for(let d=0;d<5;d++){const dot=new T.Mesh(new T.SphereGeometry(.16,6,5),M('#ffffff'));const a=d*1.3;dot.position.set(Math.cos(a)*.6,.5,Math.sin(a)*.6);g.add(dot)}
+        const st=new T.Mesh(new T.CylinderGeometry(.3,.4,1.6,8),M('#fff1d6'));st.position.y=-.8;g.add(st);g.position.set(mx,-3.1,0);lvl.add(g);shrooms.push({x:mx,y:-3.1,m:g,sq:0})}
       x+=5.5+r()*1.5+Math.min(n,20)*.12}
     const goalX=x+2;const plat=new T.Mesh(new T.BoxGeometry(6,8,4),M('#8a5a2b'));plat.position.set(goalX+3,-4,0);plat.receiveShadow=true;lvl.add(plat);
     const top=new T.Mesh(new T.BoxGeometry(6.2,.4,4.2),M('#5cc74e'));top.position.set(goalX+3,.2,0);lvl.add(top);
@@ -781,7 +789,7 @@ function monkeyswing3d(root,opts={}){
     {const c=document.createElement('canvas');c.width=256;c.height=128;const g=c.getContext('2d');g.fillStyle='#ffd23f';g.fillRect(0,0,256,128);g.fillStyle='#2b1a00';g.font='bold 54px sans-serif';g.textAlign='center';g.fillText('GOAL',128,84);
       const flag=new T.Mesh(new T.PlaneGeometry(2.4,1.2),new T.MeshStandardMaterial({map:new T.CanvasTexture(c),side:T.DoubleSide}));flag.position.set(goalX+3.6,3.4,0);lvl.add(flag);
       const pole=new T.Mesh(new T.CylinderGeometry(.07,.07,3.6,5),trunkM);pole.position.set(goalX+2.3,2.2,0);lvl.add(pole)}
-    L={n,hooks,nanas,thorns,goalX,par:Math.round(3+cnt*1.1)}}
+    L={n,hooks,nanas,thorns,shrooms,goalX,par:Math.round(3+cnt*1.1)}}
   /* state */
   let s=null;
   function begin(n){sel=n;save('monkey-sel',n);makeLevel(n);
@@ -815,7 +823,10 @@ function monkeyswing3d(root,opts={}){
     $('mog').hidden=false;$('mog').textContent=s.win&&sel<NLV-1?'Next level':'Retry';s.mode='over';levels();$('mob').textContent=s.win&&s.stars<3?'Grab every banana for 3 stars':''}
   function levels(){const g=$('mlv');g.hidden=false;g.innerHTML='';for(let i=0;i<NLV;i++){const b=document.createElement('button');b.type='button';const u=unlocked(i);
     b.style.cssText=`padding:6px 0;border-radius:9px;border:0;font:800 13px Nunito,sans-serif;cursor:${u?'pointer':'default'};background:${i===sel?'#ffd23f':u?'#fff':'rgba(255,255,255,.35)'};color:#2b1a00`;
-    b.innerHTML=`${u?i+1:'🔒'}<br><span style="font-size:9px;color:#c48a00">${'★'.repeat(stars[i]||0)}</span>`;if(u)b.onclick=e=>{e.stopPropagation();begin(i)};g.appendChild(b)}}
+ b.innerHTML=`${u?i+1:'🔒'}<br><span style="font-size:9px;color:#c48a00">${'★'.repeat(stars[i]||0)}</span>`;if(u)b.onclick=e=>{e.stopPropagation();begin(i)};g.appendChild(b)}
+    const sk=document.createElement('div');sk.style.cssText='grid-column:1/-1;display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:6px;font:800 11px Nunito,sans-serif';const ts=totalStars();
+    SKINS.forEach(([nm,need,col],k)=>{const b=document.createElement('button');b.type='button';const u=ts>=need;b.style.cssText=`padding:5px 8px;border-radius:9px;border:${k===skin?'3px solid #2b1a00':'0'};background:${u?col:'rgba(255,255,255,.35)'};color:#2b1a00;font:inherit;cursor:${u?'pointer':'default'}`;
+      b.textContent=u?nm:`🔒 ${need}★`;if(u)b.onclick=e=>{e.stopPropagation();skin=k;save('monkey-skin',k);applySkin();levels()};sk.appendChild(b)});g.appendChild(sk)}
   $('mov').addEventListener('pointerdown',e=>{if(s&&s.mode==='over'&&!(e.target.closest&&e.target.closest('button,#mlv'))){e.preventDefault();$('mog').click()}});
   $('mog').onclick=e=>{e&&e.stopPropagation();if(s&&s.mode==='over'&&s.win&&sel<NLV-1)begin(sel+1);else begin(sel)};
   /* fixed-step physics */
@@ -823,7 +834,7 @@ function monkeyswing3d(root,opts={}){
   function step(dt){if(!s)return;
     for(const d of drops){d.userData.v.y-=20*dt;d.position.addScaledVector(d.userData.v,dt);if(d.position.y<-4.5){scene.remove(d);d.userData.dead=true}}
     for(let i=drops.length-1;i>=0;i--)if(drops[i].userData.dead)drops.splice(i,1);
-    L.hooks.forEach(h=>h.ring.scale.lerp(new T.Vector3(1,1,1),.15));L.nanas.forEach(b=>{if(!b.got)b.m.rotation.y+=dt*3;else{b.m.position.y+=dt*6;b.m.scale.multiplyScalar(.9)}});
+    L.hooks.forEach(h=>h.ring.scale.lerp(new T.Vector3(1,1,1),.15));L.shrooms&&L.shrooms.forEach(m=>{m.sq*=.85;m.m.scale.set(1+m.sq*.3,1-m.sq*.4,1+m.sq*.3)});L.nanas.forEach(b=>{if(!b.got)b.m.rotation.y+=dt*3;else{b.m.position.y+=dt*6;b.m.scale.multiplyScalar(.9)}});
     if(s.mode==='ready'){s.t=0;mk.position.set(s.x,s.y+Math.abs(Math.sin(performance.now()/300))*.15,0);return}
     if(s.mode==='over')return;
     const sd=dt*s.slow;if(s.mode==='dying'||s.mode==='won'){s.deadT+=dt;if(s.mode==='won'){s.vx*=.92;s.vy-=G*sd;s.x+=s.vx*sd;s.y=Math.max(.95,s.y+s.vy*sd);if(s.y<=.95)s.vy=0}
@@ -841,6 +852,7 @@ function monkeyswing3d(root,opts={}){
     for(const t of L.thorns)if(Math.hypot(t.x-s.x,t.y-s.y)<1.05){fail('thorn');return}
     if(s.x>L.goalX&&s.y>-3&&s.y<1.4+(s.vy<0?3:0)&&(s.vy<=0||s.y<.95)&&s.hook<0){s.y=.95;s.x=Math.min(s.x,L.goalX+5);win();return}
     if(s.x<2.5&&s.y<=.95&&s.vy<0&&s.hook<0&&s.x>-4){s.y=.95;s.vy=0;s.vx=0;s.mode='ready';return}
+    for(const m of L.shrooms)if(s.vy<0&&Math.abs(s.x-m.x)<1.3&&s.y<m.y+1.1&&s.y>m.y-.4){s.vy=17;s.vx=Math.max(s.vx,5);m.sq=1;tone(180,.25,'sine',.18,500);pop('BOING!',600)}
     if(s.y<-3.6)fail('water');
     $('mt').textContent=s.t.toFixed(1)}
   function render(){if(!s){renderer.render(scene,cam);return}
@@ -850,6 +862,7 @@ function monkeyswing3d(root,opts={}){
     deco.position.x=Math.floor(s.camX/120)*120*0; /* backdrop is long enough for 30 levels */
     water.position.x=s.camX;bank.position.x=s.camX;
     mk.position.set(s.x,s.y,0);
+    trailPos.copyWithin(3,0,(TRN-1)*3);trailPos[0]=s.x;trailPos[1]=s.y+.2;trailPos[2]=-.3;if(s.mode!=='play'){for(let i=0;i<TRN;i++){trailPos[i*3]=s.x;trailPos[i*3+1]=s.y+.2;trailPos[i*3+2]=-.3}}trailG.attributes.position.needsUpdate=true;
     if(s.mode==='dying'){body.rotation.z+=s.spin*.016;}else if(s.hook>=0){const hk=L.hooks[s.hook],a=Math.atan2(hk.x-s.x,hk.y-s.y);body.rotation.z+=((-a)-body.rotation.z)*.3;
       arm.visible=true;const d=Math.hypot(hk.x-s.x,hk.y-s.y);arm.position.set(0,.5,0);arm.rotation.z=-a;arm.scale.set(1,Math.max(.1,d-.5),1);
       rope.visible=false}else{arm.visible=false;rope.visible=false;const tgt=s.mode==='ready'?0:Math.max(-1.2,Math.min(1.2,-s.vx*.04+s.vy*-.03));body.rotation.z+=(tgt*(s.mode==='play'?1:0)-body.rotation.z)*.1;if(s.mode==='play')body.rotation.z-=.0}
