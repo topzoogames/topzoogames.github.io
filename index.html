@@ -777,7 +777,7 @@ function drift3d(root,opts={}){
   /* skid marks (pooled) + tyre smoke */
   const SK=mobile?160:320,skM=new T.MeshBasicMaterial({color:0x050507,transparent:true,opacity:.55,depthWrite:false}),skG=new T.PlaneGeometry(.35,.9),skids=[];let skI=0;
   for(let i=0;i<SK;i++){const m=new T.Mesh(skG,skM);m.rotation.x=-Math.PI/2;m.position.y=.012;m.visible=false;scene.add(m);skids.push(m)}
-  const skid=(x,z,h)=>{const m=skids[skI++%SK];m.visible=true;m.position.x=x;m.position.z=z;m.rotation.z=h};
+  const skPrev=[null,null];const skid=(w,x,z)=>{const p=skPrev[w];skPrev[w]={x,z};if(!p)return;const dx=x-p.x,dz=z-p.z,L=Math.hypot(dx,dz);if(L<.05||L>3)return;const m=skids[skI++%SK];m.visible=true;m.position.x=(x+p.x)/2;m.position.z=(z+p.z)/2;m.rotation.z=Math.atan2(dx,dz);m.scale.y=(L+.06)/.9};
   const smC=document.createElement('canvas');smC.width=smC.height=64;const sg=smC.getContext('2d'),sgr=sg.createRadialGradient(32,32,0,32,32,32);sgr.addColorStop(0,'rgba(230,230,240,.8)');sgr.addColorStop(1,'rgba(230,230,240,0)');sg.fillStyle=sgr;sg.fillRect(0,0,64,64);
   const smT=new T.CanvasTexture(smC),puffs=[];
   for(let i=0;i<(mobile?40:80);i++){const sp=new T.Sprite(new T.SpriteMaterial({map:smT,transparent:true,depthWrite:false,opacity:0}));sp.visible=false;scene.add(sp);puffs.push({sp,life:0})}
@@ -835,11 +835,11 @@ function drift3d(root,opts={}){
       if(nc){if(s.spinC!==nc.c){s.spinC=nc.c;s.spin=0;s.lastA=Math.atan2(s.x-nc.c.position.x,s.z-nc.c.position.z)}const an=Math.atan2(s.x-nc.c.position.x,s.z-nc.c.position.z);let da=an-s.lastA;if(da>Math.PI)da-=Math.PI*2;if(da<-Math.PI)da+=Math.PI*2;s.spin+=da;s.lastA=an;
         if(Math.abs(s.spin)>Math.PI*2){s.spin=0;s.pts+=150;s.donuts=(s.donuts||0)+1;pop('Donut! +150');blip(600,1500,.25,'triangle',.09)}}else s.spinC=null;
       s.combo+=s.ang*sp*dt*.06*(inZ?2:1);if(inZ)s.zoneT=(s.zoneT||0)+dt;s.mult=Math.min(5,s.mult+dt*.35);s.calm=0;
-      const bx=Math.sin(s.h),bz=Math.cos(s.h);for(const sx of[-1,1]){const wx=s.x-bx*1.5+rx*sx*.85,wz=s.z-bz*1.5+rz*sx*.85;skid(wx,wz,s.h);if(Math.random()<.5)puff(wx,wz)}}
-    else if(play){s.calm+=dt;if(s.calm>.9)bank()}
+      const bx=Math.sin(s.h),bz=Math.cos(s.h);for(const sx of[-1,1]){const wx=s.x-bx*1.5+rx*sx*.85,wz=s.z-bz*1.5+rz*sx*.85;skid(sx>0?1:0,wx,wz);if(Math.random()<.3)puff(wx,wz)}}
+    else if(play){skPrev[0]=skPrev[1]=null;s.calm+=dt;if(s.calm>.9)bank()}
     if(scrG)scrG.gain.setTargetAtTime(play&&s.ang>14&&sp>9?.09:0,ac.currentTime,.05);
     if(engG){engG.gain.setTargetAtTime(play?.05:0,ac.currentTime,.1);eng.frequency.setTargetAtTime(50+sp*4.5,ac.currentTime,.05)}
-    for(const p of puffs)if(p.life>0){p.life-=dt*.9;p.sp.position.y+=dt*1.2;p.sp.scale.multiplyScalar(1+dt*1.4);p.sp.material.opacity=Math.max(0,p.life*.45);if(p.life<=0)p.sp.visible=false}
+    for(const p of puffs)if(p.life>0){p.life-=dt*.9;p.sp.position.y+=dt*1.2;p.sp.scale.multiplyScalar(1+dt*1.4);p.sp.material.opacity=Math.max(0,p.life*.33);if(p.life<=0)p.sp.visible=false}
     if(play){s.t-=dt;if(s.t<=0){s.t=0;bank();end()}}
     car.position.set(s.x,0,s.z);car.rotation.y=s.h;car.rotation.z=-vr*.012;
     /* chase camera, swings wider while drifting */
