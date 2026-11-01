@@ -203,7 +203,9 @@ const GAMES=[
  {id:'rhino-rally',name:'Rhino Rally',cat:'driving',play:true,d3:true,c1:'#f1b783',c2:'#8a4b22',
   how:'On a computer, use the left and right arrow keys to change lanes and press Up or Space to jump. On a phone or tablet, swipe left or right to change lanes and swipe up to jump. Logs can be jumped; crates and zebra cars cannot. Grab bananas for 25 bonus points each. Career mode has 30 levels with 3 goals each: earn stars to open the next level and win coins.',
   about:'A 3D savanna road race at sunset. Dodge, jump and drive as far as your rhino can go.'},
- {id:'cheetah-drift',name:'Cheetah Drift Arena',cat:'driving',c1:'#ff9f1c',c2:'#3a1c71'},
+ {id:'cheetah-drift',name:'Cheetah Drift Arena',cat:'driving',c1:'#ff9f1c',c2:'#3a1c71',
+  how:'On a computer, drive with the arrow keys or WASD and hold Space for the handbrake to slide the back out. On a phone or tablet the car speeds up by itself: hold the arrow buttons to steer and hold DRIFT to slide. Long, wide slides build your combo up to x5; it banks when you grip again. Drift inside the green ring for double points, and slide all the way round a cone for a +150 donut. Walls and cones lose your combo. Each session lasts 90 seconds; career mode has 30 levels with 3 goals each.',
+  about:'A 3D drift arena under neon city lights. Throw your Cheetah Chase car sideways, chain huge slides and pull donuts round the cones. Coins are shared with the other TopZoo racing games.'},
  {id:'zoo-blocks-3d',name:'Zoo Blocks 3D',cat:'puzzle',c1:'#7ad35a',c2:'#1f4e79'},
  {id:'banana-farm-tycoon',name:'Banana Farm Tycoon',cat:'sim',c1:'#ffd23f',c2:'#4f7a28'},
  {id:'penguin-slide',name:'Penguin Slide 3D',cat:'arcade',c1:'#7fd3ff',c2:'#14476b'},
@@ -687,7 +689,7 @@ window.__cheetahShot=()=>new Promise(res=>{const d=document.createElement('div')
 
 /* Cheetah Drift Arena (PROTOTYPE, tile still 'maybe coming soon'): open neon lot, slide physics with handbrake, drift combos, 90 s sessions; coins go to the shared wallet */
 function drift3d(root,opts={}){
-  root.innerHTML=`<div class="g3d night"><div class="hud"><div><b id="dt">90</b><small>seconds</small></div><div><b id="dk">0</b><small>km/h</small></div><div><b id="ds">0</b><small>drift pts</small></div><div><b id="dc">x1</b><small>combo</small></div><div class="hbtns"><button class="mute" id="hmu" type="button"></button></div></div>
+  root.innerHTML=`<div class="g3d night"><div class="hud"><div><b id="dt">90</b><small>seconds</small></div><div><b id="dk">0</b><small>km/h</small></div><div><b id="ds">0</b><small>drift pts</small></div><div><b id="dc">x1</b><small>combo</small></div><div class="hbtns"><button class="mute" id="hmu" type="button"></button><button class="mute" id="hq" type="button"></button></div></div>
     <div class="pop" id="pp"></div>
     <div class="ov show3d" id="ov"><h2 id="oh">Cheetah Drift Arena</h2><div class="ldbar" id="lbw"><i id="lb"></i></div><p id="op">Loading the arena…</p><div class="gar" id="trk"></div><div id="crr" class="mis crr"></div><div class="gar mis" id="mis"></div><button class="btn" id="og" type="button" hidden>Start session</button><small id="ob"></small></div>
     <div id="tc" hidden style="position:absolute;inset:auto 0 12px 0;display:flex;justify-content:space-between;padding:0 12px;z-index:3;pointer-events:none">
@@ -705,8 +707,10 @@ function drift3d(root,opts={}){
   /* arenas: 'night' = Neon Lot, 'dusk' = Sunset Docks (unlocks at best 1000) */
   const AN=opts.arena||(load('drift-arena','night')==='dusk'&&load('best-drift-arena',0)>=1000?'dusk':'night'),DK=AN==='dusk';
   const T=THREE,mobile=matchMedia('(pointer:coarse)').matches||box.clientWidth<700,AR=58;
-  const renderer=new T.WebGLRenderer({antialias:!mobile,preserveDrawingBuffer:!!opts.test});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.5:2));renderer.shadowMap.enabled=!mobile;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;renderer.outputEncoding=T.sRGBEncoding;
+  /* quality: auto/low/med/high (saved). Low = no glow, 1x sharpness, no shadows; high = shadows on phones too (next load) */
+  let qSet=load('drift-quality','auto');const QL=()=>qSet==='auto'?(mobile?'med':'high'):qSet,QPR={low:1,med:1.5,high:2};
+  const renderer=new T.WebGLRenderer({antialias:QL()==='high',preserveDrawingBuffer:!!opts.test});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,QPR[QL()]));renderer.shadowMap.enabled=QL()==='high';renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;renderer.outputEncoding=T.sRGBEncoding;
   const cv=renderer.domElement;box.prepend(cv);
   const scene=new T.Scene();scene.background=new T.Color(DK?0xf08a5d:0x150f33);scene.fog=new T.Fog(DK?0xf2a07a:0x150f33,DK?60:70,DK?170:190);
   const cam=new T.PerspectiveCamera(62,1,.1,400);
@@ -724,9 +728,11 @@ function drift3d(root,opts={}){
     composer.addPass(new T.ShaderPass(T.GammaCorrectionShader));fxaa=new T.ShaderPass(T.FXAAShader);composer.addPass(fxaa);ppSize()};
   const ppSize=()=>{if(!composer)return;const w=box.clientWidth||800,h=box.clientHeight||500,pr=renderer.getPixelRatio();composer.setSize(w,h);if(fxaa)fxaa.uniforms.resolution.value.set(1/(w*pr),1/(h*pr))};
   const ro2=new ResizeObserver(ppSize);ro2.observe(box);cleanups.push(()=>ro2.disconnect());
-  if(!mobile)loadPP().then(()=>{if(alive)setupPP()}).catch(()=>{});
+  if(QL()!=='low')loadPP().then(()=>{if(alive)setupPP()}).catch(()=>{});
+  const qBtn=$('hq'),qLabel=()=>qBtn.textContent='Quality: '+{auto:'Auto',low:'Low',med:'Medium',high:'High'}[qSet];qLabel();
+  qBtn.onclick=()=>{const o=['auto','low','med','high'];qSet=o[(o.indexOf(qSet)+1)%4];save('drift-quality',qSet);qLabel();renderer.setPixelRatio(Math.min(devicePixelRatio,QPR[QL()]));size();ppSize();if(QL()!=='low'&&!composer)loadPP().then(()=>{if(alive&&!composer)setupPP()}).catch(()=>{})};
   scene.add(new T.HemisphereLight(DK?0xffc9a0:0x8e7cff,DK?0x3a2030:0x1a1028,DK?.9:.75));
-  const sun=new T.DirectionalLight(DK?0xffb070:0xffd2a8,DK?1.5:.9);sun.position.set(30,50,20);sun.castShadow=!mobile;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40});scene.add(sun,sun.target);
+  const sun=new T.DirectionalLight(DK?0xffb070:0xffd2a8,DK?1.5:.9);sun.position.set(30,50,20);sun.castShadow=QL()==='high';sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40});scene.add(sun,sun.target);
   /* asphalt lot: code-drawn texture with paint lines + oil stains */
   const tc=document.createElement('canvas');tc.width=tc.height=1024;const g=tc.getContext('2d');g.fillStyle='#2a2b33';g.fillRect(0,0,1024,1024);
   for(let i=0;i<9000;i++){const v=30+Math.random()*30|0;g.fillStyle=`rgb(${v},${v},${v+6})`;g.fillRect(Math.random()*1024,Math.random()*1024,2,2)}
@@ -840,7 +846,7 @@ function drift3d(root,opts={}){
     const tx=s.x-Math.sin(ch)*cd,tz=s.z-Math.cos(ch)*cd;cam.position.x+=(tx-cam.position.x)*Math.min(1,dt*4);cam.position.z+=(tz-cam.position.z)*Math.min(1,dt*4);cam.position.y=4.2;cam.lookAt(s.x,1,s.z);
     sun.position.set(s.x+30,50,s.z+20);sun.target.position.set(s.x,0,s.z);
     $('dt').textContent=Math.ceil(s.t);$('dk').textContent=Math.round(sp*3.6);$('ds').textContent=s.pts+(s.combo>0?' +'+Math.round(s.combo*s.mult):'');$('dc').textContent='x'+s.mult.toFixed(1)}
-  const render=()=>composer?composer.render():renderer.render(scene,cam);
+  const render=()=>composer&&QL()!=='low'?composer.render():renderer.render(scene,cam);
   const best=()=>load('best-drift-arena',0);
   function end(){s.mode='over';$('tc').hidden=true;const sc=s.pts,nb=sc>best();if(nb)save('best-drift-arena',sc);const coins=Math.floor(sc/40);if(coins>0)save('cheetah-coins',load('cheetah-coins',0)+coins);const md=misEnd()+crEnd();
     $('oh').textContent='Time!';$('op').innerHTML=`${nb?'<span class="nbest">NEW BEST!</span>':''}<span class="res"><span><b>${sc}</b>drift pts</span><span><b>${s.best}</b>best drift</span><span><b>${s.donuts||0}</b>donuts</span><span class="rc"><b>+${coins}</b>coins</span></span>${md}<small style="display:block;opacity:.75;margin-top:4px">Coins are shared with Cheetah Chase and Rhino Rally. Wallet: ${load('cheetah-coins',0)}</small>`;
