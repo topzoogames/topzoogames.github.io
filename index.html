@@ -355,7 +355,7 @@ window.__rhinoShot=()=>new Promise(res=>{const d=document.createElement('div');d
 
 function rhino3d(root,opts={}){
   root.innerHTML=`<div class="g3d"><div class="hud"><div><b id="hd">0</b><small>metres</small></div><div><b id="hb">0</b><small>bananas</small></div><div><b id="hs">0</b><small>score</small></div><div class="hbtns"><button class="mute" id="hm" type="button"></button><button class="mute" id="hmu" type="button"></button><button class="mute" id="hq" type="button"></button></div></div>
-    <div class="ov" id="ov"><h2 id="oh">Rhino Rally</h2><div class="ldbar" id="lbw"><i id="lb"></i></div><p id="op">Loading the savanna…</p><div class="gar" id="trk"></div><div id="crr" class="mis crr" hidden></div><div class="gar mis" id="mis"></div><button class="btn" id="og" type="button" hidden>Start race</button><small id="ob"></small></div></div>`;
+    <div class="pop" id="pp"></div><div class="ov" id="ov"><h2 id="oh">Rhino Rally</h2><div class="ldbar" id="lbw"><i id="lb"></i></div><p id="op">Loading the savanna…</p><div class="gar" id="trk"></div><div id="crr" class="mis crr" hidden></div><div class="gar mis" id="mis"></div><div class="gar" id="shop"></div><button class="btn" id="og" type="button" hidden>Start race</button><small id="ob"></small></div></div>`;
   const box=root.querySelector('.g3d'),$=id=>root.querySelector('#'+id);
   let alive=true,raf=0,ldP=0,fwd=null;const cleanups=[];
   const prog=v=>{ldP=Math.max(ldP,v);const b=$('lb');if(b)b.style.width=ldP+'%';if(ldP>=100)setTimeout(()=>{const w=$('lbw');w&&w.classList.add('done')},500)};
@@ -569,7 +569,14 @@ function rhino3d(root,opts={}){
     if(Math.random()<.8)for(let i=0;i<4;i++)spawn('banana',free,z-i*2.8,1.1)};
   const move=d=>{if(s.mode==='play'){const n=Math.max(0,Math.min(3,s.lane+d));if(n!==s.lane){s.lane=n;blip(220,180,.08,'triangle',.05)}}};
   const jump=()=>{if(s.mode==='play'&&s.py<=.01){s.vy=12.5;blip(260,720,.2,'triangle',.08)}};
-  const begin=cm=>{crRun=cm==='cr'?crL:0;reset();s.mode='play';s.speed=24;$('ov').hidden=true;$('trk').hidden=true;$('mis').hidden=true;$('crr').hidden=true;audio();if(ac&&ac.state==='suspended')ac.resume();music()};
+
+  /* coin shop: one-race power-ups paid with the shared coins (no real money). Saved in tz-rhino-boosts; used on the next normal/career race */
+  function pop(t){const p=$('pp');if(!p)return;p.textContent=t;p.classList.remove('on');void p.offsetWidth;p.classList.add('on')}
+  function drawShop(){const el=$('shop');if(!el||opts.shot||opts.rec)return;const bo=load('rhino-boosts',{}),coins=load('cheetah-coins',0),SHOP=[['shield','\u{1F6E1} Shield',120,'Survive one hit'],['head','\u{1F680} Head start',150,'Start 300 m down the track (not in career)'],['dbl','\u{1F34C} Double bananas',90,'Every banana counts twice this race']];
+    el.innerHTML='<b style="display:block;width:100%;font-size:12px;opacity:.85;margin:4px 0 2px">Power-ups for your next race · coins: '+coins+'</b>';
+    SHOP.forEach(([k,n,cost,d])=>{const b=document.createElement('button');b.type='button';b.className='gb'+(bo[k]?' on':'');b.title=d;b.innerHTML=`<b>${n}</b><small>${bo[k]?'Ready ✔':(coins<cost?'\u{1F512} ':'')+cost+' coins'}</small>`;
+      b.onclick=()=>{const bb=load('rhino-boosts',{}),cn=load('cheetah-coins',0);if(bb[k]){pop(d);return}if(cn<cost){pop('Need '+cost+' coins');return}save('cheetah-coins',cn-cost);bb[k]=1;save('rhino-boosts',bb);blip(520,1040,.12,'triangle',.07);pop(n+' ready');drawShop()};el.appendChild(b)})}
+  const begin=cm=>{crRun=cm==='cr'?crL:0;reset();s.mode='play';s.speed=24;if(!opts.rec&&!opts.shot){const bo=load('rhino-boosts',{}),got=[];if(bo.shield){s.shield=1;delete bo.shield;got.push('Shield on')}if(bo.head&&!crRun){s.dist=300;s.speed=30;delete bo.head;got.push('Head start +300 m')}if(bo.dbl){s.dbl=1;delete bo.dbl;got.push('Double bananas')}if(got.length){save('rhino-boosts',bo);setTimeout(()=>alive&&pop(got.join(' · ')),400)}}$('ov').hidden=true;$('trk').hidden=true;$('mis').hidden=true;$('crr').hidden=true;audio();if(ac&&ac.state==='suspended')ac.resume();music()};
   const crash=()=>{s.mode='over';s.shake=.5;boom();const sc=score(),nb=sc>best&&sc>0;if(sc>best){best=sc;save('best-rhino3d',best)}
     /* coins are shared with the Cheetah Chase garage */
     const earned=Math.floor(s.dist/15)+s.ban;if(earned>0)save('cheetah-coins',load('cheetah-coins',0)+earned);
@@ -580,11 +587,11 @@ function rhino3d(root,opts={}){
     const mdTxt=rMis({run:s.dist,ban:s.ban,total:s.dist,score:sc});
     const xpTxt=crEnd()+mdTxt+`<small style="display:block;font-weight:800;margin-top:4px">+${gx} XP · Driver level ${v1.l} (${v1.cur}/${v1.need})${lvTxt}</small>`;
     for(let i=0;i<40;i++)emit(dust,s.px+(Math.random()-.5)*2,1,-1.8,(Math.random()-.5)*8,Math.random()*7,(Math.random()-.5)*6,1.2);
-    setTimeout(()=>{if(!alive)return;$('oh').textContent='Crash!';$('op').innerHTML=`${nb?'<span class="nbest">NEW BEST!</span>':''}<span class="res" style="grid-template-columns:repeat(4,minmax(0,1fr));max-width:400px"><span><b>${Math.floor(s.dist)}</b>metres</span><span><b>${s.ban}</b>bananas</span><span class="rc"><b>${sc}</b>score</span><span><b>+${earned}</b>coins</span></span><small style="display:block;opacity:.8;margin-top:4px">Coins: ${load('cheetah-coins',0)} · spend them in the Cheetah Chase garage</small>${xpTxt}`;if(nb)blip(520,1040,.25,'triangle',.08);
-      $('og').textContent='Race again';$('ob').textContent='Best score: '+best;drawTrk();$('trk').hidden=false;$('mis').hidden=false;drawCR();$('ov').hidden=false},700)};
+    setTimeout(()=>{if(!alive)return;$('oh').textContent='Crash!';$('op').innerHTML=`${nb?'<span class="nbest">NEW BEST!</span>':''}<span class="res" style="grid-template-columns:repeat(4,minmax(0,1fr));max-width:400px"><span><b>${Math.floor(s.dist)}</b>metres</span><span><b>${s.ban}</b>bananas</span><span class="rc"><b>${sc}</b>score</span><span><b>+${earned}</b>coins</span></span><small style="display:block;opacity:.8;margin-top:4px">Coins: ${load('cheetah-coins',0)} · spend them on power-ups below or in the Cheetah Chase garage</small>${xpTxt}`;if(nb)blip(520,1040,.25,'triangle',.08);
+      $('og').textContent='Race again';$('ob').textContent='Best score: '+best;drawTrk();$('trk').hidden=false;$('mis').hidden=false;drawCR();drawShop();$('ov').hidden=false},700)};
   $('og').onclick=()=>begin();
   const showStart=()=>{$('oh').textContent='Rhino Rally';$('op').textContent=mobile?'Swipe left or right to change lanes. Swipe up to jump over logs. New: Career mode, 30 levels.':'Use the arrow keys to change lanes. Press Up or Space to jump over logs. New: Career mode, 30 levels.';
-    $('og').hidden=false;$('og').textContent='Start race';$('ob').textContent=best?'Best score: '+best:''};
+    $('og').hidden=false;$('og').textContent='Start race';$('ob').textContent=best?'Best score: '+best:'';drawShop()};
   showStart();
   /* 3 daily missions (picked by date), coins into the shared wallet */
   const RPOOL=[['run','Reach 500 m in one run',500,60],['ban','Grab 15 bananas in one run',15,60],['total','Drive 1500 m today',1500,80],['score','Score 700 in one run',700,70]];
@@ -646,9 +653,9 @@ function rhino3d(root,opts={}){
     wheels.forEach(w=>w.rotation.x-=dz/.56);
     for(let i=objs.length-1;i>=0;i--){const o=objs[i],u=o.userData;o.position.z+=dz*(u.rel||1);
       if(u.type==='banana'){o.rotation.y+=dt*3;o.children[0].position.y=Math.sin(s.t*4+o.position.z)*.15;
-        if(play&&Math.abs(o.position.x-s.px)<1.6&&Math.abs(o.position.z)<1.7&&Math.abs(o.position.y-(s.py+1.1))<1.9){s.ban++;blip(880,1500,.12,'sine',.1);
+        if(play&&Math.abs(o.position.x-s.px)<1.6&&Math.abs(o.position.z)<1.7&&Math.abs(o.position.y-(s.py+1.1))<1.9){s.ban+=s.dbl?2:1;blip(880,1500,.12,'sine',.1);
           for(let k=0;k<10;k++)emit(spark,o.position.x,o.position.y,o.position.z,(Math.random()-.5)*5,Math.random()*5,(Math.random()-.5)*3,.5);scene.remove(o);objs.splice(i,1);continue}}
-      else if(s.mode==='play'&&!noHit&&Math.abs(o.position.x-s.px)<1.95&&Math.abs(o.position.z)<u.half+1.85&&!(u.type==='log'&&s.py>1.15)&&!(u.type==='crate'&&s.py>2.25)){crash();}
+      else if(s.mode==='play'&&!noHit&&Math.abs(o.position.x-s.px)<1.95&&Math.abs(o.position.z)<u.half+1.85&&!(u.type==='log'&&s.py>1.15)&&!(u.type==='crate'&&s.py>2.25)){if(s.shield){s.shield=0;scene.remove(o);objs.splice(i,1);s.shake=.4;pop('Shield saved you!');blip(300,900,.25,'triangle',.1);continue}crash();}
       if(o.position.z>16){scene.remove(o);objs.splice(i,1)}}
     if(play&&s.py===0&&Math.random()<s.speed*dt*.9)for(const sx of[-1,1])emit(dust,s.px+sx*1.15,.25,1.6,(Math.random()-.5)*1.5+sx*.6,.6+Math.random()*1.4,1+Math.random()*2,.9);
     tickP(dust,dt,dz,-.4);tickP(spark,dt,dz,6);
