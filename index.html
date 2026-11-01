@@ -710,6 +710,19 @@ function drift3d(root,opts={}){
   const cam=new T.PerspectiveCamera(62,1,.1,400);
   const size=()=>{const w=box.clientWidth||800,h=box.clientHeight||500;renderer.setSize(w,h,false);cv.style.width='100%';cv.style.height='100%';cam.aspect=w/h;cam.updateProjectionMatrix()};size();
   const ro=new ResizeObserver(size);ro.observe(box);cleanups.push(()=>ro.disconnect(),()=>renderer.dispose());
+
+  /* post-processing (same chain as Cheetah Chase): bloom glow -> ACES grade -> gamma -> FXAA; skipped on phones for speed */
+  let composer=null,fxaa=null;
+  const PPF=['shaders/CopyShader.js','shaders/LuminosityHighPassShader.js','shaders/FXAAShader.js','shaders/GammaCorrectionShader.js','postprocessing/EffectComposer.js','postprocessing/RenderPass.js','postprocessing/ShaderPass.js','postprocessing/UnrealBloomPass.js'];
+  const loadPP=()=>window.__ppP||(window.__ppP=(async()=>{for(const f of PPF)await new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/'+f;sc.onload=res;sc.onerror=rej;document.head.appendChild(sc)})})());
+  const setupPP=()=>{const w=box.clientWidth||800,h=box.clientHeight||500;composer=new T.EffectComposer(renderer);composer.addPass(new T.RenderPass(scene,cam));
+    composer.addPass(new T.UnrealBloomPass(new T.Vector2(w,h),.75,.45,.8));
+    composer.addPass(new T.ShaderPass({uniforms:{tDiffuse:{value:null},exposure:{value:1.25}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+      fragmentShader:'uniform sampler2D tDiffuse;uniform float exposure;varying vec2 vUv;vec3 aces(vec3 x){return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.0,1.0);}void main(){vec4 t=texture2D(tDiffuse,vUv);vec2 d=vUv-0.5;gl_FragColor=vec4(aces(t.rgb*exposure*0.6)*(1.0-dot(d,d)*0.7),t.a);}'}));
+    composer.addPass(new T.ShaderPass(T.GammaCorrectionShader));fxaa=new T.ShaderPass(T.FXAAShader);composer.addPass(fxaa);ppSize()};
+  const ppSize=()=>{if(!composer)return;const w=box.clientWidth||800,h=box.clientHeight||500,pr=renderer.getPixelRatio();composer.setSize(w,h);if(fxaa)fxaa.uniforms.resolution.value.set(1/(w*pr),1/(h*pr))};
+  const ro2=new ResizeObserver(ppSize);ro2.observe(box);cleanups.push(()=>ro2.disconnect());
+  if(!mobile)loadPP().then(()=>{if(alive)setupPP()}).catch(()=>{});
   scene.add(new T.HemisphereLight(0x8e7cff,0x1a1028,.75));
   const sun=new T.DirectionalLight(0xffd2a8,.9);sun.position.set(30,50,20);sun.castShadow=!mobile;sun.shadow.mapSize.set(1024,1024);Object.assign(sun.shadow.camera,{left:-40,right:40,top:40,bottom:-40});scene.add(sun,sun.target);
   /* asphalt lot: code-drawn texture with paint lines + oil stains */
@@ -738,6 +751,10 @@ function drift3d(root,opts={}){
   const wt=new T.CanvasTexture(wc);wt.encoding=T.sRGBEncoding;wt.wrapS=wt.wrapT=T.RepeatWrapping;
   for(let i=0;i<(mobile?26:44);i++){const a=i/(mobile?26:44)*Math.PI*2+Math.random()*.05,rr=AR+28+Math.random()*30,h=14+Math.random()*38,w=8+Math.random()*10,t=wt.clone();t.needsUpdate=true;t.repeat.set(w/8,h/16);
     const m=new T.Mesh(new T.BoxGeometry(w,h,w),new T.MeshStandardMaterial({color:0x1a1630,emissive:0xffffff,emissiveMap:t,emissiveIntensity:.9,roughness:.9}));m.position.set(Math.cos(a)*rr,h/2,Math.sin(a)*rr);m.rotation.y=-a;scene.add(m)}
+  /* bonus zone: a glowing ring that moves every 15 s; drifting inside it doubles the combo gain */
+  const zoneM=new T.MeshBasicMaterial({color:0x39ff88,transparent:true,opacity:.35,depthWrite:false}),zone=new T.Mesh(new T.RingGeometry(6.2,7,48),zoneM);zone.rotation.x=-Math.PI/2;zone.position.y=.03;scene.add(zone);
+  const zoneFill=new T.Mesh(new T.CircleGeometry(6.2,48),new T.MeshBasicMaterial({color:0x39ff88,transparent:true,opacity:.07,depthWrite:false}));zoneFill.rotation.x=-Math.PI/2;zoneFill.position.y=.025;scene.add(zoneFill);
+  const moveZone=()=>{const a=Math.random()*Math.PI*2,r=10+Math.random()*(AR-22);zone.position.x=zoneFill.position.x=Math.cos(a)*r;zone.position.z=zoneFill.position.z=Math.sin(a)*r};moveZone();
   /* cones to slalom around (knock them = lose the combo) */
   const coneG=new T.ConeGeometry(.45,1.1,12),coneM=new T.MeshStandardMaterial({color:0xff7a1a,roughness:.6}),cones=[];
   for(const [x,z] of [[18,0],[-18,0],[0,18],[0,-18],[30,22],[-30,-22],[30,-22],[-30,22]]){const c=new T.Mesh(coneG,coneM);c.position.set(x,.55,z);c.castShadow=!mobile;scene.add(c);cones.push(c)}
@@ -765,7 +782,7 @@ function drift3d(root,opts={}){
   const pop=t=>{const p=$('pp');p.textContent=t;p.classList.remove('on');void p.offsetWidth;p.classList.add('on')};
   /* state + physics: heading h, velocity (vx,vz); lateral grip drops with the handbrake / at big slip angles = drift */
   let s;const SESSION=90;
-  const reset=()=>{s={mode:'ready',x:0,z:30,h:Math.PI,vx:0,vz:0,yr:0,t:SESSION,pts:0,combo:0,mult:1,calm:0,best:0,ang:0}};reset();
+  const reset=()=>{s={zt:15,spin:0,spinC:null,mode:'ready',x:0,z:30,h:Math.PI,vx:0,vz:0,yr:0,t:SESSION,pts:0,combo:0,mult:1,calm:0,best:0,ang:0}};reset();
   const inp={l:0,r:0,u:0,d:0,hb:0};
   const kmap={ArrowLeft:'l',KeyA:'l',ArrowRight:'r',KeyD:'r',ArrowUp:'u',KeyW:'u',ArrowDown:'d',KeyS:'d',Space:'hb',ShiftLeft:'hb'};
   const kd=e=>{const k=kmap[e.code];if(k){inp[k]=1;e.preventDefault()}},ku=e=>{const k=kmap[e.code];if(k)inp[k]=0};
@@ -787,7 +804,14 @@ function drift3d(root,opts={}){
     for(const c of cones){if(c.userData.down)continue;if(Math.hypot(c.position.x-s.x,c.position.z-s.z)<1.6){c.userData.down=1;c.rotation.z=1.4;c.position.y=.3;lose('Cone hit! combo lost');setTimeout(()=>{c.userData.down=0;c.rotation.z=0;c.position.y=.55},4000)}}
     /* drift scoring: slip angle x speed while sliding; banks after .9 s of grip */
     s.ang=Math.atan2(Math.abs(vr),Math.max(.1,Math.abs(vf)))*57.3;
-    if(play&&sp>9&&s.ang>14){s.combo+=s.ang*sp*dt*.06;s.mult=Math.min(5,s.mult+dt*.35);s.calm=0;
+    const inZ=Math.hypot(s.x-zone.position.x,s.z-zone.position.z)<6.6;zoneM.opacity=.3+(inZ?.35:0)+Math.sin(performance.now()/200)*.08;
+    if(play){s.zt-=dt;if(s.zt<=0){s.zt=15;moveZone()}}
+    if(play&&sp>9&&s.ang>14){
+      /* donut: keep sliding round a cone (within 9 m) for a full turn */
+      const nc=cones.reduce((m,c)=>{const d=Math.hypot(c.position.x-s.x,c.position.z-s.z);return d<9&&(!m||d<m.d)?{c,d}:m},null);
+      if(nc){if(s.spinC!==nc.c){s.spinC=nc.c;s.spin=0;s.lastA=Math.atan2(s.x-nc.c.position.x,s.z-nc.c.position.z)}const an=Math.atan2(s.x-nc.c.position.x,s.z-nc.c.position.z);let da=an-s.lastA;if(da>Math.PI)da-=Math.PI*2;if(da<-Math.PI)da+=Math.PI*2;s.spin+=da;s.lastA=an;
+        if(Math.abs(s.spin)>Math.PI*2){s.spin=0;s.pts+=150;pop('Donut! +150');blip(600,1500,.25,'triangle',.09)}}else s.spinC=null;
+      s.combo+=s.ang*sp*dt*.06*(inZ?2:1);s.mult=Math.min(5,s.mult+dt*.35);s.calm=0;
       const bx=Math.sin(s.h),bz=Math.cos(s.h);for(const sx of[-1,1]){const wx=s.x-bx*1.5+rx*sx*.85,wz=s.z-bz*1.5+rz*sx*.85;skid(wx,wz,s.h);if(Math.random()<.5)puff(wx,wz)}}
     else if(play){s.calm+=dt;if(s.calm>.9)bank()}
     if(scrG)scrG.gain.setTargetAtTime(play&&s.ang>14&&sp>9?.09:0,ac.currentTime,.05);
@@ -800,7 +824,7 @@ function drift3d(root,opts={}){
     const tx=s.x-Math.sin(ch)*cd,tz=s.z-Math.cos(ch)*cd;cam.position.x+=(tx-cam.position.x)*Math.min(1,dt*4);cam.position.z+=(tz-cam.position.z)*Math.min(1,dt*4);cam.position.y=4.2;cam.lookAt(s.x,1,s.z);
     sun.position.set(s.x+30,50,s.z+20);sun.target.position.set(s.x,0,s.z);
     $('dt').textContent=Math.ceil(s.t);$('dk').textContent=Math.round(sp*3.6);$('ds').textContent=s.pts+(s.combo>0?' +'+Math.round(s.combo*s.mult):'');$('dc').textContent='x'+s.mult.toFixed(1)}
-  const render=()=>renderer.render(scene,cam);
+  const render=()=>composer?composer.render():renderer.render(scene,cam);
   const best=()=>load('best-drift-arena',0);
   function end(){s.mode='over';$('tc').hidden=true;const sc=s.pts,nb=sc>best();if(nb)save('best-drift-arena',sc);const coins=Math.floor(sc/40);if(coins>0)save('cheetah-coins',load('cheetah-coins',0)+coins);
     $('oh').textContent=nb?'New best!':'Time!';$('op').innerHTML=`Drift points: <b>${sc}</b> · best single drift: <b>${s.best}</b> · +${coins} coins (shared with Cheetah Chase)`;
