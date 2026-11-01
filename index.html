@@ -798,6 +798,12 @@ function zookart3d(root,opts={}){
 .zk-card{background:rgba(50,18,0,.62);border-radius:14px;padding:8px 14px;font-weight:800;font-size:13px;line-height:1.45;max-width:380px}
 .zk-card b{color:#ffd23f}
 .zk-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.zk .zk-pa{font:900 15px system-ui,sans-serif;letter-spacing:1px;color:#fff}
+.zk.zk-menu .zk-pa{display:none}
+.zk-cls{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.zk-cls button{font:800 13px system-ui,sans-serif;border:0;border-radius:12px;padding:7px 12px;background:rgba(50,18,0,.62);color:#fff;cursor:pointer;text-transform:uppercase;letter-spacing:.5px}
+.zk-cls button.on{background:linear-gradient(#ffe36a,#ffb21f);color:#4a2500;box-shadow:0 3px 0 #b86e00}
+.zk-tip{font-size:12px;font-weight:700;opacity:.9;max-width:380px;text-align:center}
 .zk-res{width:min(360px,94%);border-collapse:collapse;font-weight:800;font-size:14px;background:rgba(50,18,0,.66);border-radius:12px;overflow:hidden}
 .zk-res td{padding:5px 10px;text-align:left}.zk-res td:last-child{text-align:right;font-variant-numeric:tabular-nums}.zk-res tr.me{background:#ffd23f;color:#4a2500}
 .zk-place{font-family:var(--display);font-size:clamp(46px,10vw,84px);line-height:1;color:#ffe14a;-webkit-text-stroke:3px #5a2400;paint-order:stroke fill;text-shadow:0 6px 0 #5a2400}
@@ -814,10 +820,10 @@ function zookart3d(root,opts={}){
 .zk.touch .zk-help{display:none}
 .zk.touch canvas.zk-map{top:auto;bottom:auto;top:62px;right:10px;width:84px;height:84px;opacity:.85}
 .zk.touch .zk-pos{display:none}
-.zk.zk-sm .zk-pad{gap:8px;bottom:8px}.zk.zk-sm .zk-pad button{width:52px;height:52px;font-size:20px;background:rgba(50,18,0,.32)}.zk.zk-sm .zk-pad .dr{width:66px;height:66px;font-size:14px}.zk.zk-sm .zk-pad button[data-k=B]{width:42px!important;height:42px!important;font-size:14px!important}.zk.zk-sm canvas.zk-map{top:50px;width:62px;height:62px}
+.zk.zk-sm .zk-pad{gap:8px;bottom:8px}.zk.zk-sm .zk-pad button{width:52px;height:52px;font-size:20px;background:rgba(50,18,0,.32)}.zk.zk-sm .zk-pad .dr{width:66px;height:66px;font-size:14px}.zk.zk-sm .zk-pad button[data-k=B]{width:42px!important;height:42px!important;font-size:14px!important}.zk.zk-sm canvas.zk-map{top:50px;width:62px;height:62px}.zk.zk-sm .zk-ov{gap:6px;padding-top:8px}.zk.zk-sm .zk-logo{font-size:44px}.zk.zk-sm .zk-btn{padding:8px 34px;font-size:22px}.zk.zk-sm .zk-cls button{padding:5px 9px;font-size:11px}.zk.zk-sm .zk-tip{display:none}
 .zk.zk-menu .zk-pos,.zk.zk-menu canvas.zk-map,.zk.zk-menu .zk-help,.zk.zk-menu .zk-pad,.zk.zk-menu .hud>div:not(.hbtns){display:none!important}
 </style>
-<div class="hud"><div><b id="kp">6/6</b><small>place</small></div><div><b id="kl">1/3</b><small>lap</small></div><div><b id="kt">0.0</b><small>time</small></div><div class="hbtns"><button class="mute" id="kmu" type="button"></button></div></div>
+<div class="hud"><div><b id="kp">6/6</b><small>place</small></div><div><b id="kl">1/3</b><small>lap</small></div><div><b id="kt">0.0</b><small>time</small></div><div class="hbtns"><button class="mute zk-pa" id="kpa" type="button" aria-label="Pause">II</button><button class="mute" id="kmu" type="button"></button></div></div>
 <div class="pop" id="kpop"></div><div class="zk-big" id="kbig"></div><canvas class="zk-map" id="kmap" width="128" height="128"></canvas><div class="zk-pos" id="kpos"></div>
 <div class="zk-help" id="khelp">← → steer · hold SPACE while turning to drift · ↓ brake</div>
 <div class="zk-pad" style="left:14px"><button type="button" data-k="L">◀</button><button type="button" data-k="R">▶</button></div>
@@ -967,23 +973,28 @@ function zookart3d(root,opts={}){
     k.g.position.set(k.x,0,k.z);k.g.rotation.y=k.h})}
   const ord=n=>n+(n===1?'st':n===2?'nd':n===3?'rd':'th');
   const prog=k=>k.fin?1e7-k.finT*100:k.lap*N+k.i;
-  function begin(){place();s={mode:'count',cd:3.6,t:0,last:4,camH:P1.h,shake:0,fov:62,finWait:0,boostFx:0};inp.L=inp.R=inp.B=inp.D=0;
+  function begin(){place();s={mode:'count',cd:5.4,t:0,last:4,camH:P1.h,shake:0,fov:62,finWait:0,boostFx:0};inp.L=inp.R=inp.B=inp.D=0;
     $('kov').hidden=true;box.classList.remove('zk-menu');$('khelp').style.display='';$('kp').textContent='6/6';$('kl').textContent='1/3';$('kt').textContent='0.0';au();music(true)}
   let popT=0;function pop(t,col){const p=$('kpop');p.textContent=t;p.style.color=col||'#ffb22e';p.classList.remove('on');void p.offsetWidth;p.classList.add('on')}
   function big(t,ms=700){const b=$('kbig');b.textContent=t;b.style.opacity=1;b.style.transform='translate(-50%,-50%) scale(1.25)';requestAnimationFrame(()=>{b.style.transform='translate(-50%,-50%) scale(1)'});clearTimeout(big.t);big.t=setTimeout(()=>{b.style.opacity=0},ms)}
   /* ---- input ---- */
   const KM={ArrowLeft:'L',KeyA:'L',ArrowRight:'R',KeyD:'R',ArrowDown:'B',KeyS:'B',Space:'D',ShiftLeft:'D',ShiftRight:'D',KeyX:'D'};
-  const onKey=e=>{if(!$('kov').hidden){if(e.type==='keydown'&&(e.code==='Enter'||e.code==='Space')){const b=$('kgo');if(b){e.preventDefault();b.click()}}return}
-    const k=KM[e.code];if(!k)return;e.preventDefault();inp[k]=e.type==='keydown'?1:0};
+  const onKey=e=>{if(e.type==='keydown'&&(e.code==='Escape'||e.code==='KeyP')&&s){if(s.mode==='pause'){e.preventDefault();resume();return}if(s.mode==='race'||s.mode==='count'){e.preventDefault();pause();return}}
+    if(!$('kov').hidden){if(e.type==='keydown'&&(e.code==='Enter'||e.code==='Space')){const b=$('kgo');if(b){e.preventDefault();b.click()}}return}
+    const k=KM[e.code];if(!k)return;e.preventDefault();inp[k]=e.type==='keydown'?1:0;if(e.type==='keydown'&&s&&s.mode==='count'&&s.cd>3.6)s.cd=3.6};
+  $('kpa').addEventListener('click',e=>{e.stopPropagation();pause()});
+  const onVis=()=>{if(document.hidden)pause()};document.addEventListener('visibilitychange',onVis);cleanups.push(()=>document.removeEventListener('visibilitychange',onVis));
   addEventListener('keydown',onKey);addEventListener('keyup',onKey);
   root.querySelectorAll('.zk-pad button').forEach(b=>{const k=b.dataset.k;const dn=e=>{e.preventDefault();try{b.setPointerCapture(e.pointerId)}catch(x){}inp[k]=1;b.classList.add('on')},up=e=>{inp[k]=0;b.classList.remove('on')};
     b.addEventListener('pointerdown',dn);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('lostpointercapture',up);b.addEventListener('contextmenu',e=>e.preventDefault())});
   cleanups.push(()=>{removeEventListener('keydown',onKey);removeEventListener('keyup',onKey);renderer.dispose();ac&&ac.close()});
   /* ---- physics ---- */
+  const CLS={beginner:{n:'Beginner',ai:.9},standard:{n:'Standard',ai:1},expert:{n:'Expert',ai:1.07}};let cls=load('kart-class','standard');if(!CLS[cls])cls='standard';
+  const TIPS=['tip: hold drift until the sparks go purple, then let go for an ultra boost','tip: orange arrow pads give a free boost, the rivals aim for them too','tip: you start last, the first corner is the best place to pass','tip: driving on the grass slows you down a lot','tip: press P or Esc to pause'];
   const VMAX=29,SPARK=['#5ec8ff','#ff9a1f','#d46bff'];
   function drive(k,st,br,dr,dt){
     const l=lat(k),offroad=Math.abs(l)>HW+1.2;
-    let vmax=VMAX*(k===P1?1:SKILL[k.k]*k.rb)*(offroad?.55:1);if(k.boost>0)vmax*=1.38;
+    let vmax=VMAX*(k===P1?1:SKILL[k.k]*k.rb*CLS[cls].ai)*(offroad?.55:1);if(k.boost>0)vmax*=1.38;
     if(s.mode==='count')vmax=0;
     if(br&&!k.drift)k.v-=34*dt;else if(k.v<vmax)k.v+=(k.boost>0?40:20)*(1-.55*k.v/VMAX)*dt;
     if(k.v>vmax)k.v=Math.max(vmax,k.v-(offroad?30:12)*dt);if(k.v<-6)k.v=-6;
@@ -1025,20 +1036,27 @@ function zookart3d(root,opts={}){
   function results(){s.mode='over';music(false);const est=k=>k.fin?k.finT:s.t+((4-k.lap)*N-k.i)*SEG/24;
     const order=[...karts].sort((a,b)=>est(a)-est(b));const place=order.indexOf(P1)+1;
     const coins=[120,80,60,40,25,15][place-1];try{save('cheetah-coins',load('cheetah-coins',0)+coins)}catch(e){}
-    const t=P1.finT,newBest=!best.t||t<best.t;best.races++;if(place===1)best.wins++;if(newBest)best.t=+t.toFixed(2);if(!best.pos||place<best.pos)best.pos=place;save('kart-best',best);
+    const t=P1.finT,newBest=!best.t||t<best.t;best.races++;if(place===1)best.wins++;if(newBest)best.t=+t.toFixed(2);if(!best.pos||place<best.pos)best.pos=place;best.ct=best.ct||{};const cb=!best.ct[cls]||t<best.ct[cls];if(cb)best.ct[cls]=+t.toFixed(2);save('kart-best',best);
     const bl=P1.lapT.length?Math.min(...P1.lapT):0;
     const rows=order.map((k,i)=>`<tr class="${k===P1?'me':''}"><td>${i+1}. ${k===P1?'🐯 You':(k.d.a==='penguin'?'🐧 ':'🦏 ')+k.d.n}</td><td>${fmt(est(k))}${k.fin?'':'*'}</td></tr>`).join('');
-    $('ksub').textContent='Savanna Speedway · results';
+    $('ksub').textContent='Savanna Speedway · '+CLS[cls].n+' · results';
     $('kbody').innerHTML=`<div class="zk-place">${place===1?'🏆 ':''}${ord(place)} place</div><table class="zk-res">${rows}</table>
-      <p class="zk-card">Time <b>${fmt(t)}</b> · best lap <b>${fmt(bl)}</b>${newBest?' · <b>NEW BEST!</b>':''}<br>+${coins} coins${place>1?' · tip: hold DRIFT through corners until the sparks turn orange or purple':''}</p>
+      <p class="zk-card">Time <b>${fmt(t)}</b> · best lap <b>${fmt(bl)}</b>${newBest?' · <b>NEW BEST!</b>':cb?' · <b>best on '+CLS[cls].n+'!</b>':''}<br>+${coins} coins${place>1?' · tip: hold DRIFT through corners until the sparks turn orange or purple':''}</p>
       <div class="zk-row"><button class="zk-btn" id="kgo" type="button">Race again</button><button class="zk-btn alt" id="kmn" type="button">Menu</button></div>`;
     $('kov').hidden=false;box.classList.add('zk-menu');$('kgo').onclick=e=>{e.stopPropagation();begin()};$('kmn').onclick=e=>{e.stopPropagation();menu()}}
   const fmt=t=>{const m=Math.floor(t/60),x=t-m*60;return m+':'+(x<10?'0':'')+x.toFixed(2)};
   function menu(){place();s={mode:'menu',t:0,camH:P1.h,shake:0,fov:58};$('ksub').textContent='Savanna Speedway · 3 laps';$('khelp').style.display='none';
     $('kbody').innerHTML=`<div class="zk-row" style="flex-direction:column;align-items:center;gap:12px"><button class="zk-btn" id="kgo" type="button">Race!</button>
+      <div class="zk-cls" id="kcls">${Object.keys(CLS).map(c=>`<button type="button" data-c="${c}" class="${c===cls?'on':''}">${CLS[c].n}${best.ct&&best.ct[c]?' · '+fmt(best.ct[c]):''}</button>`).join('')}</div>
       <p class="zk-card">🐯 You drive the <b>Tiger kart</b> against 5 rivals.<br>${touch?'◀ ▶ steer · hold <b>DRIFT</b> while turning':'← → steer · hold <b>SPACE</b> while turning'} to drift: sparks go <span style="color:#5ec8ff">blue</span> → <span style="color:#ff9a1f">orange</span> → <span style="color:#d46bff">purple</span>, let go for a turbo! Orange arrow pads boost you too.</p>
       ${best.races?`<p class="zk-card">Best time <b>${fmt(best.t)}</b> · best place <b>${ord(best.pos)}</b> · wins <b>${best.wins}</b> / ${best.races}</p>`:''}</div>`;
+    $('kbody').insertAdjacentHTML('beforeend','<p class="zk-tip">'+TIPS[(Math.random()*TIPS.length)|0]+'</p>');
+    root.querySelectorAll('#kcls button').forEach(b=>b.onclick=e=>{e.stopPropagation();cls=b.dataset.c;save('kart-class',cls);root.querySelectorAll('#kcls button').forEach(x=>x.classList.toggle('on',x===b))});
     $('kov').hidden=false;box.classList.add('zk-menu');$('kgo').onclick=e=>{e.stopPropagation();begin()}}
+  function pause(){if(!s||(s.mode!=='race'&&s.mode!=='count'))return;s.pm=s.mode;s.mode='pause';inp.L=inp.R=inp.B=inp.D=0;engine(false);screech(false);music(false);
+    $('ksub').textContent='Paused';$('kbody').innerHTML=`<div class="zk-row" style="flex-direction:column;align-items:center;gap:10px"><button class="zk-btn" id="kgo" type="button">Resume</button><div class="zk-row"><button class="zk-btn alt" id="krs" type="button">Restart</button><button class="zk-btn alt" id="kmn" type="button">Quit race</button></div></div>`;
+    $('kov').hidden=false;box.classList.add('zk-menu');$('kgo').onclick=e=>{e.stopPropagation();resume()};$('krs').onclick=e=>{e.stopPropagation();begin()};$('kmn').onclick=e=>{e.stopPropagation();menu()}}
+  function resume(){if(!s||s.mode!=='pause')return;s.mode=s.pm;$('kov').hidden=true;box.classList.remove('zk-menu');if(s.mode==='race')engine(true);music(true)}
   /* ---- minimap ---- */
   const mc=$('kmap'),mx=mc.getContext('2d');let mnx=1e9,mxx=-1e9,mnz=1e9,mxz=-1e9;P.forEach(p=>{mnx=Math.min(mnx,p.x);mxx=Math.max(mxx,p.x);mnz=Math.min(mnz,p.z);mxz=Math.max(mxz,p.z)});
   const msc=110/Math.max(mxx-mnx,mxz-mnz),mp=(x,z)=>[128-(9+(x-mnx)*msc)-(110-(mxx-mnx)*msc)/2,9+(z-mnz)*msc+(110-(mxz-mnz)*msc)/2];
@@ -1048,6 +1066,7 @@ function zookart3d(root,opts={}){
   /* ---- main step ---- */
   function step(dt){if(!s)return;stepP(dt);padT.offset.y-=dt*1.6;
     if(s.mode==='menu'||s.mode==='over'){s.t+=dt;return}
+    if(s.mode==='pause')return;
     if(s.mode==='count'){s.cd-=dt;const n=Math.ceil(s.cd-.6);if(n<s.last&&n>=1){s.last=n;big(String(n),600);SFX.beep()}if(s.cd<=.6&&s.last>0){s.last=0;big('GO!',700);SFX.go();engine(true)}
       if(s.cd<=.6){s.mode='race'}karts.forEach(k=>{k.rb=1});return}
     if(s.mode==='fin'&&s.finWait<1)dt*=.35+.65*s.finWait;
@@ -1074,7 +1093,10 @@ function zookart3d(root,opts={}){
       for(const w of k.wheels)w.rotation.x+=k.v*.016/.33;for(const w of k.fw)w.rotation.y=-(k.yawV*.25)}
     if(s.mode==='menu'||s.mode==='over'){const a=s.t*.25,r=7.5;cam.fov+=(48-cam.fov)*.1;cam.position.set(P1.x+Math.sin(P1.h+a+2.4)*r,2.6,P1.z+Math.cos(P1.h+a+2.4)*r);cam.lookAt(P1.x,.9,P1.z)}
     else{let d=P1.h-s.camH;d=Math.atan2(Math.sin(d),Math.cos(d));s.camH+=d*.12;const portrait=H>W,D=portrait?8.8:7,Hh=portrait?4.2:3.5;
-      cam.position.set(P1.x-Math.sin(s.camH)*D,Hh,P1.z-Math.cos(s.camH)*D);if(s.shake>0){s.shake-=.016;cam.position.x+=(Math.random()-.5)*s.shake;cam.position.y+=(Math.random()-.5)*s.shake}
+      cam.position.set(P1.x-Math.sin(s.camH)*D,Hh,P1.z-Math.cos(s.camH)*D);
+      if(s.mode==='count'&&s.cd>3.6){const u=Math.min(1,(5.4-s.cd)/1.8),e=u*u*(3-2*u),fx=Math.sin(P1.h),fz=Math.cos(P1.h),sx=P1.x+fx*26+fz*9,sz=P1.z+fz*26-fx*9;
+        cam.position.set(sx+(cam.position.x-sx)*e,13+(Hh-13)*e,sz+(cam.position.z-sz)*e);const lx=P1.x+fx*6*(1-e)+fx*4*e,lz=P1.z+fz*6*(1-e)+fz*4*e;cam.lookAt(lx,1,lz);cam.fov+=(55-cam.fov)*.1;cam.updateProjectionMatrix();
+        sun.position.set(P1.x-30,60,P1.z-20);sun.target.position.set(P1.x,0,P1.z);drawMap();renderer.render(scene,cam);return}if(s.shake>0){s.shake-=.016;cam.position.x+=(Math.random()-.5)*s.shake;cam.position.y+=(Math.random()-.5)*s.shake}
       cam.lookAt(P1.x+Math.sin(s.camH)*4,1,P1.z+Math.cos(s.camH)*4);const fv=62+(P1.boost>0?12:0)+Math.max(0,P1.v-20)*.3;cam.fov+=(fv-cam.fov)*.08}
     cam.updateProjectionMatrix();
     sun.position.set(P1.x-30,60,P1.z-20);sun.target.position.set(P1.x,0,P1.z);
@@ -1088,7 +1110,6 @@ function zookart3d(root,opts={}){
   else raf=requestAnimationFrame(loop);
   }
 }
-
 /* Monkey Swing: one-button swinging through the jungle. Hold = grab the nearest vine ring, let go = fly. 30 short levels, stars from bananas. */
 function monkeyswing3d(root,opts={}){
   root.innerHTML=`<div class="g3d"><div class="hud"><div><b id="ml">1</b><small>level</small></div><div><b id="mb">0/0</b><small>bananas</small></div><div><b id="mt">0.0</b><small>time</small></div><div class="hbtns"><button class="mute" id="mmu" type="button"></button></div></div>
