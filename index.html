@@ -206,7 +206,7 @@ const GAMES=[
  {id:'cheetah-drift',name:'Cheetah Drift Arena',cat:'driving',play:true,d3:true,c1:'#ff9f1c',c2:'#3a1c71',
   how:'On a computer, drive with the arrow keys or WASD and hold Space for the handbrake to slide the back out. On a phone or tablet the car speeds up by itself: hold the arrow buttons to steer and hold DRIFT to slide. Long, wide slides build your combo up to x5; it banks when you grip again. Drift inside the green ring for double points, and slide all the way round a cone for a +150 donut. Walls and cones lose your combo. Each session lasts 90 seconds; career mode has 30 levels with 3 goals each.',
   about:'A 3D drift arena under neon city lights. Throw your Cheetah Chase car sideways, chain huge slides and pull donuts round the cones. Coins are shared with the other TopZoo racing games.'},
- {id:'zoo-blocks-3d',name:'Zoo Blocks 3D',cat:'puzzle',c1:'#7ad35a',c2:'#1f4e79',
+ {id:'zoo-blocks-3d',name:'Zoo Blocks 3D',cat:'puzzle',play:true,d3:true,c1:'#7ad35a',c2:'#1f4e79',
   how:'Drag one of the three animal pieces onto the wooden crate (mouse or finger). Fill a whole row or a whole column to clear it. Clear more than one line at once, or clear lines on back-to-back moves, for big combo points. The game ends when none of your pieces fit.',
   about:'A cosy 3D block puzzle in the zoo. Lions, pandas, frogs and friends stack up on a wooden crate; clear lines to send them hopping. Coins are shared with the other TopZoo games.'},
  {id:'banana-farm-tycoon',name:'Banana Farm Tycoon',cat:'sim',c1:'#ffd23f',c2:'#4f7a28'},
@@ -694,7 +694,7 @@ window.__cheetahShot=()=>new Promise(res=>{const d=document.createElement('div')
 /* Cheetah Drift Arena (PROTOTYPE, tile still 'maybe coming soon'): open neon lot, slide physics with handbrake, drift combos, 90 s sessions; coins go to the shared wallet */
 /* Zoo Blocks 3D: drag animal block pieces onto an 8x8 zoo crate; full rows/columns clear (prototype, tile not live yet) */
 function zooblocks3d(root,opts={}){
-  root.innerHTML=`<div class="g3d"><div class="hud"><div><b id="zs">0</b><small>score</small></div><div><b id="zb">0</b><small>best</small></div><div><b id="zc">x1</b><small>combo</small></div><div class="hbtns"><button class="mute" id="zmu" type="button"></button></div></div>
+  root.innerHTML=`<div class="g3d"><div class="hud"><div><b id="zs">0</b><small>score</small></div><div><b id="zb">0</b><small>best</small></div><div><b id="zc">x1</b><small>combo</small></div><div class="hbtns"><button class="mute" id="zmu" type="button"></button><button class="mute" id="zq" type="button"></button></div></div>
     <div class="pop" id="zp"></div>
     <div class="ov show3d" id="zov"><h2 id="zoh">Zoo Blocks 3D</h2><div class="ldbar" id="zlbw"><i id="zlb"></i></div><p id="zop">Loading the zoo…</p><button class="btn" id="zog" type="button" hidden>Play</button><button class="btn" id="zod" type="button" hidden style="margin-top:6px;background:#4cc3ff">Daily puzzle</button><small id="zob"></small></div></div>`;
   const box=root.querySelector('.g3d'),$=id=>root.querySelector('#'+id);
@@ -707,8 +707,17 @@ function zooblocks3d(root,opts={}){
 
   function build(){
   const T=THREE,N=8,mobile=matchMedia('(pointer:coarse)').matches||box.clientWidth<700;
+  let qSet=load('zoo-blocks-quality','auto');const QL=()=>qSet==='auto'?(mobile?'med':'high'):qSet,QPR={low:1,med:1.5,high:2};
+  /* rounded box: subdivided box pushed onto a rounded shell (keeps face groups + uvs) */
+  function rbox(w,h,d,r,sg=3){const g=new T.BoxGeometry(w,h,d,sg,sg,sg),P=g.attributes.position,v=new T.Vector3(),q=new T.Vector3(),hw=w/2-r,hh=h/2-r,hd=d/2-r;
+    for(let i=0;i<P.count;i++){v.fromBufferAttribute(P,i);q.set(Math.max(-hw,Math.min(hw,v.x)),Math.max(-hh,Math.min(hh,v.y)),Math.max(-hd,Math.min(hd,v.z)));v.sub(q);if(v.lengthSq()>1e-9)v.setLength(r);v.add(q);P.setXYZ(i,v.x,v.y,v.z)}
+    g.computeVertexNormals();return g}
+  function woodTex(base,dark,rep){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,256,256);
+    for(let k=0;k<46;k++){x.strokeStyle=dark;x.globalAlpha=.08+((k*37)%10)/60;x.lineWidth=1+(k%3);x.beginPath();const y0=(k*5.6)%256;x.moveTo(0,y0);for(let t=0;t<=256;t+=16)x.lineTo(t,y0+Math.sin(t/40+k)*3);x.stroke()}
+    x.globalAlpha=.25;x.fillStyle=dark;for(const [kx,ky] of [[60,80],[190,170]]){x.beginPath();x.ellipse(kx,ky,9,4,0,0,7);x.fill()}x.globalAlpha=1;
+    const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(rep,rep);t.anisotropy=4;return t}
   const renderer=new T.WebGLRenderer({antialias:true,preserveDrawingBuffer:!!opts.test});
-  renderer.setPixelRatio(Math.min(devicePixelRatio,mobile?1.5:2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
+  renderer.setPixelRatio(Math.min(devicePixelRatio,QPR[QL()]));renderer.shadowMap.enabled=QL()!=='low';renderer.shadowMap.type=T.PCFSoftShadowMap;
   renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.9;
   box.prepend(renderer.domElement);const cv=renderer.domElement;cv.style.touchAction='none';
   const scene=new T.Scene();scene.background=new T.Color('#8fd3ff');scene.fog=new T.Fog('#8fd3ff',30,70);
@@ -718,11 +727,11 @@ function zooblocks3d(root,opts={}){
   Object.assign(sun.shadow.camera,{left:-12,right:12,top:12,bottom:-12,near:1,far:40});scene.add(sun);
   /* world: grass, wooden crate board, trees, fence, sign */
   const grass=new T.Mesh(new T.PlaneGeometry(140,140),new T.MeshStandardMaterial({color:'#6cc24a',roughness:1}));grass.rotation.x=-Math.PI/2;grass.position.y=-.62;grass.receiveShadow=true;scene.add(grass);
-  const wood=new T.MeshStandardMaterial({color:'#b9773e',roughness:.75}),wood2=new T.MeshStandardMaterial({color:'#8d5526',roughness:.8});
-  const crate=new T.Mesh(new T.BoxGeometry(N+1,.5,N+1),wood2);crate.position.y=-.36;crate.receiveShadow=crate.castShadow=true;scene.add(crate);
-  const cellG=new T.BoxGeometry(.94,.12,.94),cellM=[new T.MeshStandardMaterial({color:'#e9d3a6',roughness:.9}),new T.MeshStandardMaterial({color:'#dcc28e',roughness:.9})];
+  const wood=new T.MeshStandardMaterial({color:'#ffffff',map:woodTex('#c4834a','#6b3a14',1),roughness:.7}),wood2=new T.MeshStandardMaterial({color:'#ffffff',map:woodTex('#93592a','#4a2408',2),roughness:.8});
+  const crate=new T.Mesh(rbox(N+1,.5,N+1,.12,2),wood2);crate.position.y=-.36;crate.receiveShadow=crate.castShadow=true;scene.add(crate);
+  const cellG=rbox(.94,.12,.94,.05,2),cellTx=woodTex('#ead5a8','#a8875a',.5),cellM=[new T.MeshStandardMaterial({color:'#ffffff',map:cellTx,roughness:.85}),new T.MeshStandardMaterial({color:'#efe0c0',map:cellTx,roughness:.85})];
   const cells=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const m=new T.Mesh(cellG,cellM[(r+c)%2]);m.position.set(c-3.5,-.1,r-3.5);m.receiveShadow=true;scene.add(m);cells.push(m)}
-  for(let i=0;i<4;i++){const rail=new T.Mesh(new T.BoxGeometry(N+1.2,.3,.3),wood);const a=i*Math.PI/2;rail.position.set(Math.sin(a)*4.7,-.02,Math.cos(a)*4.7);rail.rotation.y=a;rail.castShadow=true;scene.add(rail)}
+  for(let i=0;i<4;i++){const rail=new T.Mesh(rbox(N+1.2,.3,.3,.1,2),wood);const a=i*Math.PI/2;rail.position.set(Math.sin(a)*4.7,-.02,Math.cos(a)*4.7);rail.rotation.y=a;rail.castShadow=true;scene.add(rail)}
   const trunkM=new T.MeshStandardMaterial({color:'#7a4a24'}),leafM=[new T.MeshStandardMaterial({color:'#2f9e44',roughness:.9}),new T.MeshStandardMaterial({color:'#3fb950',roughness:.9})];
   for(let i=0;i<22;i++){const a=i/22*Math.PI*2+.13,rr=13+(i*7%5)*1.6,t=new T.Group();
     const tr=new T.Mesh(new T.CylinderGeometry(.25,.35,1.6,6),trunkM);tr.position.y=.2;t.add(tr);
@@ -733,7 +742,7 @@ function zooblocks3d(root,opts={}){
     for(const sx of [-2,2]){const p=new T.Mesh(new T.BoxGeometry(.25,2.4,.25),wood2);p.position.set(sx,.3,-6.75);scene.add(p)}}
   /* animals: colour + face style */
   const ANI=[['lion','#f5a623','#c46d00'],['panda','#f4f4f4','#222'],['frog','#5ad15a','#2a7a2a'],['penguin','#2d3a4a','#ffffff'],['flamingo','#ff7eb6','#c2185b'],['elephant','#9aa5b1','#5d6875'],['tiger','#ff8a3d','#2b1a00']];
-  const blkG=new T.BoxGeometry(.9,.7,.9),eyeG=new T.SphereGeometry(.07,8,6),eyeM=new T.MeshStandardMaterial({color:'#111',roughness:.3}),earG=new T.BoxGeometry(.2,.2,.12);
+  const blkG=rbox(.9,.7,.9,.13,3),eyeG=new T.SphereGeometry(.07,8,6),eyeM=new T.MeshStandardMaterial({color:'#111',roughness:.3}),glG=new T.SphereGeometry(.022,6,4),glM=new T.MeshBasicMaterial({color:'#ffffff'}),earG=rbox(.2,.2,.12,.05,2);
   /* code-drawn fur patterns per animal: [side texture, front texture] */
   function furTex(n,a,b2,front){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');x.fillStyle=a;x.fillRect(0,0,128,128);x.fillStyle=b2;x.strokeStyle=b2;
     const sh=(c0,c1,al)=>{const g=x.createLinearGradient(0,0,0,128);g.addColorStop(0,c0);g.addColorStop(1,c1);x.globalAlpha=al;x.fillStyle=g;x.fillRect(0,0,128,128);x.globalAlpha=1;x.fillStyle=b2};
@@ -748,8 +757,8 @@ function zooblocks3d(root,opts={}){
   const aniM=ANI.map(([n,a,b])=>{const side=new T.MeshStandardMaterial({map:furTex(n,a,b,false),roughness:.5,metalness:.03}),fr=new T.MeshStandardMaterial({map:furTex(n,a,b,true),roughness:.5,metalness:.03});
     return [side,new T.MeshStandardMaterial({color:b,roughness:.6}),[side,side,side,side,fr,side]]});
   function block(ai){const g=new T.Group(),[m1,m2,mf]=aniM[ai];const b=new T.Mesh(blkG,mf);b.castShadow=b.receiveShadow=true;g.add(b);
-    for(const sx of [-.17,.17]){const e=new T.Mesh(eyeG,eyeM);e.position.set(sx,.2,.46);g.add(e);const ear=new T.Mesh(earG,m2);ear.position.set(sx*1.6,.42,-.1);g.add(ear)}
-    const nose=new T.Mesh(new T.BoxGeometry(.18,.1,.06),m2);nose.position.set(0,.02,.46);g.add(nose);return g}
+    for(const sx of [-.17,.17]){const e=new T.Mesh(eyeG,eyeM);e.position.set(sx,.2,.46);g.add(e);const gl=new T.Mesh(glG,glM);gl.position.set(sx+.025,.225,.52);g.add(gl);const ear=new T.Mesh(earG,m2);ear.position.set(sx*1.6,.42,-.1);g.add(ear)}
+    const nose=new T.Mesh(rbox(.18,.1,.08,.035,2),m2);nose.position.set(0,.02,.46);g.add(nose);return g}
   const cfG=new T.PlaneGeometry(.16,.1),cfM=['#ff5e7e','#ffd23f','#4cd97b','#4cc3ff','#b57bff','#ff9f1c'].map(c=>new T.MeshBasicMaterial({color:c,side:T.DoubleSide}));
   function confetti(x,z,n){for(let q=0;q<n;q++){const m=new T.Mesh(cfG,cfM[q%cfM.length]);m.position.set(x,.6,z);scene.add(m);
     const vx=(Math.random()-.5)*5,vy=4+Math.random()*4,vz=(Math.random()-.5)*5,rx=Math.random()*9,rz=Math.random()*9;
@@ -767,6 +776,8 @@ function zooblocks3d(root,opts={}){
   const note=(f,d,v,type)=>{if(!ac||muted||mode!=='play')return;const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,ac.currentTime);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d);o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+d)};
   const mt=setInterval(()=>{const k=mstep++%32;if(k%8===0)note(BAS[(k>>3)%4],.5,.05,'sine');if(k%2===0&&(k*7+3)%5<3)note(SCL[(k*5+(k>>3))%SCL.length],.22,.025,'triangle')},170);cleanups.push(()=>clearInterval(mt));
   const mu=$('zmu');const drawMu=()=>mu.textContent=muted?'Sound: off':'Sound: on';drawMu();mu.onclick=()=>{muted=!muted;save('zoo-blocks-mute',muted);drawMu()};
+  const zq=$('zq'),qLabel=()=>zq.textContent='Quality: '+{auto:'Auto',low:'Low',med:'Medium',high:'High'}[qSet];qLabel();
+  zq.onclick=()=>{const o=['auto','low','med','high'];qSet=o[(o.indexOf(qSet)+1)%4];save('zoo-blocks-quality',qSet);qLabel();renderer.setPixelRatio(Math.min(devicePixelRatio,QPR[QL()]));renderer.shadowMap.enabled=QL()!=='low';scene.traverse(o=>{if(o.material){[].concat(o.material).forEach(m=>m.needsUpdate=true)}});fit()};
   const pop=t=>{const p=$('zp');p.textContent=t;p.classList.remove('on');void p.offsetWidth;p.classList.add('on')};
   const hud=()=>{$('zs').textContent=score;$('zb').textContent=Math.max(best,score);$('zc').textContent='x'+(combo+1)};
   const TRAYZ=6.6,TRAYX=[-3.3,0,3.3],TS=.55;
@@ -788,7 +799,7 @@ function zooblocks3d(root,opts={}){
     if(lines){combo++;const gain=lines*N*10*(lines>1?lines:1)*combo;score+=gain;
       const clr=new Set();rows.forEach(r=>{for(let c=0;c<N;c++)clr.add(r*N+c)});cols.forEach(c=>{for(let r=0;r<N;r++)clr.add(r*N+c)});
       let k=0;for(const id of clr){const r=Math.floor(id/N),c=id%N,m=meshGrid[r][c];grid[r][c]=0;meshGrid[r][c]=null;
-        if(m){const dl=k++*.012;anims.push({t:-dl,d:.4,f:q=>{m.position.y=.33+Math.sin(q*Math.PI)*1.2;m.scale.setScalar(Math.max(.01,1-q));m.rotation.y=q*4;if(q>=1)scene.remove(m)}})}}
+        if(m){const dl=k++*.012;const hx=(c-3.5)*.35+(Math.random()-.5)*1.5,hz=(r-3.5)*.35+(Math.random()-.5)*1.5,x0=m.position.x,z0=m.position.z;anims.push({t:-dl,d:.7,f:q=>{m.position.set(x0+hx*q,.33+Math.abs(Math.sin(q*Math.PI*2))*(1.4-q),z0+hz*q);m.scale.setScalar(Math.max(.01,q<.6?1:1-(q-.6)/.4));m.rotation.y=q*6.3;if(q>=1)scene.remove(m)}})}}
       rows.forEach(r=>confetti(0,r-3.5,14));cols.forEach(c=>confetti(c-3.5,0,14));
       for(let r=0;r<N;r++)for(let c=0;c<N;c++){const m=meshGrid[r][c];if(m){const dl=(Math.abs(r-3.5)+Math.abs(c-3.5))*.03;anims.push({t:-dl-.1,d:.35,f:q=>{m.position.y=.33+Math.sin(q*Math.PI)*.35}})}}
       pop((lines>1?lines+' lines! ':'Line! ')+'+'+gain+(combo>1?'  combo x'+combo:''));blip(520,1300,.25,'triangle',.09);if(lines>1)setTimeout(()=>blip(700,1700,.25,'triangle',.08),120)}
@@ -1499,6 +1510,7 @@ const GAMEFN={
 'rhino-rally':root=>rhino3d(root),
 'cheetah-chase':root=>cheetah3d(root),
 'cheetah-drift':root=>drift3d(root),
+'zoo-blocks-3d':root=>zooblocks3d(root),
 
 /* Panda Pairs: memory card matching */
 'panda-pairs':root=>canvasGame(root,ctx=>{
