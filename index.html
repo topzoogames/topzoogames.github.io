@@ -358,7 +358,7 @@ function tile(g){const t=THUMBS[g.id];
 const shelf=(title,list,link)=>list.length?`<section class="shelf"><div class="shelf-head"><h2>${title}</h2>${link?`<a href="${link}">View all</a>`:''}</div>
   <div class="row">${list.map(tile).join('')}</div></section>`:'';
 const ad=(w,h)=>`<div class="ad" style="--h:${Math.min(h,250)}px" aria-label="Advertisement space">Ad space · ${w} × ${h}</div>`;
-const footer=`<footer><span>© ${new Date().getFullYear()} TopZoo Games</span><a href="#about">About</a><a href="#privacy">Privacy policy</a><a href="#terms">Terms</a><a href="#developers">Submit a game</a></footer>`;
+const footer=`<footer><span>© ${new Date().getFullYear()} TopZoo Games</span><a href="#about">About</a><a href="#privacy">Privacy policy</a><a href="#terms">Terms</a><a href="#developers">Submit a game</a><a href="games/">All games list</a></footer>`;
 const sorted=()=>[...GAMES].sort((a,b)=>(b.play?1:0)-(a.play?1:0));
 
 function rail(active){
